@@ -1,0 +1,55 @@
+---
+import Layout from '../layouts/Layout.astro';
+import Carousel from '../components/Carousel.astro';
+---
+
+<Layout title="Artifact Studio | Custom Picture Framing">
+
+  <!-- Hero -->
+  <section class="max-w-5xl mx-auto px-6 py-20 grid md:grid-cols-2 gap-12 items-center">
+
+    <div class="space-y-6">
+      <h1 class="font-body text-5xl leading-tight text-stone-900">
+        Custom Picture Framing.
+      </h1>
+      <p class="font-header font-medium text-base leading-relaxed text-stone-700">
+        Bespoke, artisan framing handcrafted in Waihi, New Zealand.
+        Every frame made to order.
+      </p>
+      <a
+        href="/contact"
+        class="inline-block font-body tracking-wide text-sm bg-brand-accent text-white px-6 py-3 hover:bg-brand-accent/90 transition-colors"
+      >
+        Get in touch
+      </a>
+    </div>
+
+    <div>
+      <img
+        src="/images/shop-front.png"
+        alt="Artifact Studio shopfront, Waihi"
+        class="w-full h-auto object-cover"
+      />
+    </div>
+
+  </section>
+
+  <!-- Divider -->
+  <div class="border-t border-brand-accent/10 max-w-5xl mx-auto px-6"></div>
+
+  <!-- Section Strip -->
+  <section class="max-w-5xl mx-auto px-6 py-10 flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+    <p class="font-header text-sm text-stone-500">
+      <!-- 51 Seddon Street · Waihi 3610 · New Zealand -->
+    </p>
+    <p class="font-header text-sm text-stone-500">
+      Currently booking — <span class="text-stone-700 font-medium">Free Design Consultation and Quote.</span>
+    </p>
+  </section>
+
+  <section class="py-10 max-w-5xl mx-auto">
+    <Carousel />
+  </section>
+
+
+</Layout>

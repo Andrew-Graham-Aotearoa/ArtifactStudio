@@ -1,0 +1,36 @@
+---
+export const prerender = false; // this page must run on the server, not be statically built
+
+import Layout from '../layouts/Layout.astro';
+import FramingCalculator from '../components/FramingCalculator.jsx';
+
+const isAuthed = Astro.cookies.get('frame_auth')?.value === 'ok';
+const hasError = Astro.url.searchParams.get('error') === '1';
+---
+<Layout title="Calculator | Your Frame Co.">
+  <section class="max-w-md mx-auto px-6 py-20">
+    {!isAuthed ? (
+      <>
+        <h1 class="text-2xl font-semibold mb-4">Private — Framing Calculator</h1>
+        {hasError && <p class="text-red-600 text-sm mb-4">Incorrect password.</p>}
+        <form method="POST" action="/api/login" class="space-y-3">
+          <input
+            type="password"
+            name="password"
+            placeholder="Password"
+            required
+            class="w-full border border-stone-300 rounded px-3 py-2"
+          />
+          <button
+            type="submit"
+            class="bg-stone-900 text-white rounded px-4 py-2 text-sm"
+          >
+            Enter
+          </button>
+        </form>
+      </>
+    ) : (
+      <FramingCalculator client:load />
+    )}
+  </section>
+</Layout>

@@ -1,0 +1,123 @@
+---
+// src/components/Carousel.astro
+// Usage: drop <Carousel /> into any page
+// Images live in public/images/work/ — add or remove entries in the array below
+
+const images = [
+  { src: '/images/work/frame-01.jpeg', alt: 'Custom framing example' },
+  { src: '/images/work/frame-02.jpeg', alt: 'Custom framing example' },
+  { src: '/images/work/frame-03.jpeg', alt: 'Custom framing example' },
+  { src: '/images/work/frame-04.jpeg', alt: 'Custom framing example' },
+  { src: '/images/work/frame-05.jpeg', alt: 'Custom framing example' },
+  { src: '/images/work/frame-06.jpeg', alt: 'Custom framing example' },
+  { src: '/images/work/frame-07.jpeg', alt: 'Custom framing example' },
+  { src: '/images/work/frame-08.jpeg', alt: 'Custom framing example' },
+];
+---
+
+<div class="flex items-center gap-2 px-4 h-[260px] overflow-visible">
+
+  <button
+    id="carouselPrev"
+    aria-label="Previous image"
+    class="text-brand-accent text-3xl font-body px-3 py-4 flex-shrink-0 hover:text-stone-900 transition-colors"
+  >
+    &#8249;
+  </button>
+
+  <div
+    id="carouselTrack"
+    class="flex gap-6 overflow-x-auto scroll-smooth [&::-webkit-scrollbar]:hidden w-full py-8"
+  >
+    {images.map(image => (
+      <img
+        src={image.src}
+        alt={image.alt}
+        class="carousel-img flex-shrink-0 object-cover"
+      />
+    ))}
+  </div>
+
+  <button
+    id="carouselNext"
+    aria-label="Next image"
+    class="text-brand-accent text-3xl font-body px-3 py-4 flex-shrink-0 hover:text-stone-900 transition-colors"
+  >
+    &#8250;
+  </button>
+
+</div>
+
+<style>
+  .carousel-img {
+  height: 160px;
+  width: 160px;
+  object-fit: cover;
+  transition:
+    transform 0.3s ease,
+    opacity 0.3s ease;
+  position: relative;
+  z-index: 1;
+}
+
+  .carousel-img.is-center {
+    transform: scale(1.5);
+    opacity: 1;
+    filter: grayscale(0);
+    z-index: 10;
+  }
+
+  .carousel-img:not(.is-center) {
+    transform: scale(1);
+    opacity: 0.6;
+    filter: grayscale(100%);
+  }
+</style>
+
+<script>
+  document.addEventListener('DOMContentLoaded', () => {
+    const track = document.getElementById('carouselTrack') as HTMLElement;
+    const prev = document.getElementById('carouselPrev') as HTMLButtonElement;
+    const next = document.getElementById('carouselNext') as HTMLButtonElement;
+
+    if (!track || !prev || !next) return;
+
+    const SCROLL_AMOUNT = 164;
+
+    function updateCenterImage() {
+      const imgs = track.querySelectorAll<HTMLElement>('.carousel-img');
+      const trackRect = track.getBoundingClientRect();
+      const trackCenter = trackRect.left + trackRect.width / 2;
+
+      imgs.forEach((img) => {
+        const imgRect = img.getBoundingClientRect();
+        const imgCenter = imgRect.left + imgRect.width / 2;
+        img.classList.toggle('is-center', Math.abs(imgCenter - trackCenter) < 80);
+      });
+    }
+
+    let scrollTimer: ReturnType<typeof setTimeout>;
+    track.addEventListener('scroll', () => {
+      clearTimeout(scrollTimer);
+      scrollTimer = setTimeout(updateCenterImage, 150);
+    });
+
+    next.addEventListener('click', () => {
+      const isAtEnd = track.scrollLeft + track.clientWidth >= track.scrollWidth - 5;
+      isAtEnd
+        ? track.scrollTo({ left: 0, behavior: 'smooth' })
+        : track.scrollBy({ left: SCROLL_AMOUNT, behavior: 'smooth' });
+      setTimeout(updateCenterImage, 300);
+    });
+
+    prev.addEventListener('click', () => {
+      const isAtStart = track.scrollLeft <= 5;
+      isAtStart
+        ? track.scrollTo({ left: track.scrollWidth, behavior: 'smooth' })
+        : track.scrollBy({ left: -SCROLL_AMOUNT, behavior: 'smooth' });
+      setTimeout(updateCenterImage, 300);
+    });
+
+    setTimeout(updateCenterImage, 100);
+  });
+</script>
