@@ -7,7 +7,7 @@ import FramingCalculator from '../components/FramingCalculator.jsx';
 const isAuthed = Astro.cookies.get('frame_auth')?.value === 'ok';
 const hasError = Astro.url.searchParams.get('error') === '1';
 ---
-<Layout title="Calculator | Your Frame Co.">
+<Layout title="Calculator | Artifact Studio">
   <section class="max-w-md mx-auto px-6 py-20">
     {!isAuthed ? (
       <>
