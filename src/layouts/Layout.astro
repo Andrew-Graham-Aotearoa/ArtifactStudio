@@ -6,9 +6,23 @@ import '../styles/global.css';
 interface Props {
   title: string;
   description?: string;
+  image?: string;
+  noindex?: boolean;
 }
 
-const { title, description = 'Artifact Studio' } = Astro.props;
+const {
+  title,
+  description = 'Custom picture framing and design studio in Waihi, New Zealand.',
+  image,
+  noindex = false,
+} = Astro.props;
+
+const siteUrl = Astro.site ?? new URL('https://artifactstudio.nz');
+const path = Astro.url.pathname.endsWith('/')
+  ? Astro.url.pathname
+  : `${Astro.url.pathname}/`;
+const canonical = new URL(path, siteUrl).href;
+const ogImage = image ? new URL(image, siteUrl).href : undefined;
 ---
 <!doctype html>
 <html lang="en">
@@ -20,7 +34,19 @@ const { title, description = 'Artifact Studio' } = Astro.props;
     <link rel="icon" href="/favicon.ico" sizes="32x32" />
     <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
     <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
-    <title>{title}</title>
+
+        <title>{title}</title>
+    <link rel="canonical" href={canonical} />
+    {noindex && <meta name="robots" content="noindex" />}
+
+    <meta property="og:type" content="website" />
+    <meta property="og:site_name" content="Artifact Studio" />
+    <meta property="og:locale" content="en_NZ" />
+    <meta property="og:title" content={title} />
+    <meta property="og:description" content={description} />
+    <meta property="og:url" content={canonical} />
+    {ogImage && <meta property="og:image" content={ogImage} />}
+
   </head>
   <body class="min-h-screen flex flex-col bg-brand-bg text-brand-accent-900">
     <Nav />
