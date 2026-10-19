@@ -1,0 +1,6 @@
+User-agent: *
+Allow: /
+Disallow: /calculator
+Disallow: /style-guide
+
+Sitemap: https://artifactstudio.nz/sitemap-index.xml
