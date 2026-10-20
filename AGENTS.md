@@ -2,87 +2,57 @@
 
 # Artifact Studio
 
-## Purpose
+Artifact Studio is the long-term evolution of **Artifact Photo and Frame**, a custom framing business in Waihi, New Zealand. The framing business stays operational; the long-term direction combines craftsmanship, design, software development and digital services.
 
-Artifact Studio is the long-term evolution of **Artifact Photo and Frame**, a custom framing business based in Waihi, New Zealand.
-
-The existing business remains operational, but the long-term direction is broader than framing. The website is intended to become the public face of a business that combines craftsmanship, design, software development and digital services.
-
-This project replaced a WordPress site with a modern Astro application, deliberately avoiding unnecessary complexity.
-
-This document provides architectural and business context for future AI assistants and developers. It explains *why* decisions have been made as much as *what* has been implemented, and includes a running log of major work completed.
+The site replaced a WordPress site with a modern Astro application, deliberately avoiding unnecessary complexity. This document gives architectural and business context to future AI assistants and developers: *why* decisions were made as much as *what* exists, plus a running log and to-do list.
 
 ---
 
-# Career Context (Why This Project Matters Beyond the Business)
+# Career Context
 
-Andrew is a sole trader running Artifact Studio, transitioning from **skilled physical production + business operation** toward **systems design + technical implementation + workflow integration** — described as "middle-stack integration": bridging frontend, backend, APIs, and operational workflows.
+Andrew is a sole trader moving from **skilled physical production + business operation** toward **systems design + technical implementation + workflow integration** ("middle-stack integration": frontend, backend, APIs, operational workflows). He is studying a Bachelor of Interface Design at the University of Waikato (started 2023, about halfway) alongside running the business.
 
-He is studying a Bachelor of Interface Design at the University of Waikato (started 2023, roughly halfway complete), alongside running the business. The degree gives technical language to decades of operational, manufacturing, and business experience (10 years boatbuilding/precision fabrication, gallery ownership, ~10 years custom framing).
-
-**This means the Artifact Studio website is deliberately dual-purpose**: it is both a real business asset and a live portfolio/learning project demonstrating the "middle-stack integration" direction. Future tooling (framing calculator, Xero integration, supplier pricing pipelines) should be built and documented with this dual purpose in mind — real infrastructure that also demonstrates capability.
-
-Career strategy explicitly avoids over-promising services not yet commercially ready (see Services page decisions below) and avoids positioning as "junior web developer" — the differentiator is operational + systems understanding, not coding alone.
+The website is deliberately **dual-purpose**: a real business asset and a live portfolio. Future tooling (framing calculator, Xero integration, supplier pricing pipelines) should be built and documented with that in mind. Avoid over-promising services that aren't commercially ready, and avoid positioning as a "junior web developer".
 
 ---
 
-# Current State (as of this update)
+# Current State (October 2026)
 
-The project is **live and the domain migration from the legacy WordPress site is complete.**
-
-Current production environment:
-
-- Domain: `https://artifactstudio.nz`
-- Hosting: Cloudflare Pages
-- Source control: GitHub
-- Local development: VS Code + Node
-- Continuous deployment configured (GitHub → Cloudflare Pages)
+Live at `https://artifactstudio.nz` on Cloudflare Pages. Domain migration from the legacy WordPress site is complete.
 
 ```
 VS Code → Git → GitHub → Cloudflare Pages → Production
 ```
 
-GitHub is the source of truth. Cloudflare should never become the place where changes are made manually.
+GitHub is the source of truth. Never make changes manually in Cloudflare.
 
-## Pages — status
+**Versions:** Astro 4.16.19, `@astrojs/cloudflare` 11.2.0, `@astrojs/tailwind` 5.1.5, React (islands only). `output: 'hybrid'`.
 
 | Page | Status |
 |---|---|
-| Home | Live, finalised copy |
-| About | Live, finalised — see "About Page Content" below |
-| Services | Live, finalised — see "Services Page Content" below |
-| Contact | Live, finalised — merged with former Opening Hours page, includes live Google Map embed |
-| Style Guide | Deployed but intentionally unlinked from nav (internal reference only) |
-| Calculator (`/calculator`) | Not yet built. When built, will follow the same pattern as Style Guide — deployed and password-gated, but **deliberately not linked in nav or footer** (see "Calculator" section below) |
+| Home, About, Services, Contact | Live, finalised copy |
+| 404 (`src/pages/404.astro`) | Added; confirm it serves on the live site (see Gotchas) |
+| Style Guide (`/style-guide`, `/style-guide2`) | Deployed, unlinked from nav, `noindex` |
+| Calculator (`/calculator`) | Password-gated, unlinked from nav and footer |
 
 ---
 
 # Business Context
 
-Artifact Studio is intentionally positioned as a premium creative practice rather than simply a framing business.
+Positioned as a premium creative practice, not just a framing shop. Should communicate thoughtful design, craftsmanship, technical capability, attention to detail and calm professionalism. Should resemble a gallery or studio more than a software dashboard or a traditional retail site.
 
-The website should communicate: thoughtful design, craftsmanship, technical capability, attention to detail, calm professionalism.
-
-Avoid appearing overly "tech startup" while also moving beyond the appearance of a traditional retail business — should resemble a gallery or studio more than a software dashboard.
-
-The transition from **Artifact Photo and Frame** to **Artifact Studio** occurred gradually. As of this update, the legacy domain (`artifactphotoandframe.co.nz`) has completed its migration (see "Domain Migration" below) and the WordPress hosting is being cancelled.
+Signage has changed to **Artifact Studio**; the legal trading name has not changed.
 
 ---
 
 # Project Philosophy
 
-This project deliberately favours simplicity. Technology is introduced only when it provides genuine benefit.
+Technology is introduced only when it provides genuine benefit.
 
-General principles:
-- prefer static pages
-- minimise client-side JavaScript
-- favour maintainability over cleverness
-- compose interfaces from reusable components
-- isolate complexity
-- keep hosting portable
-- optimise for long-term ownership rather than short-term convenience
-
-The website should remain understandable after years away from the project.
+- Prefer static pages; minimise client-side JavaScript
+- Favour maintainability over cleverness; compose from reusable components
+- Isolate complexity; keep hosting portable
+- Optimise for long-term ownership; the site should be understandable after years away
 
 ---
 
@@ -90,259 +60,191 @@ The website should remain understandable after years away from the project.
 
 | Layer | Choice | Reason |
 |---|---|---|
-| Framework | Astro (hybrid mode) | Static by default, islands for interactivity, platform-agnostic |
-| Styling | Tailwind CSS | Predictable, minimal CSS maintenance, component-friendly |
-| Interactivity | React (islands only) | Framing calculator; no full SPA needed |
-| Hosting | Cloudflare Pages | Automatic deployment, CDN, HTTPS, generous free tier |
+| Framework | Astro (hybrid) | Static by default, islands for interactivity, platform-agnostic |
+| Styling | Tailwind CSS | Predictable, minimal CSS maintenance |
+| Interactivity | React (islands only) | Framing calculator; no SPA |
+| Hosting | Cloudflare Pages | Auto deploy, CDN, HTTPS, free tier |
 | DNS | Cloudflare (both domains) | See Domain Migration |
-| Email | Zoho, DNS on Cloudflare, routed to existing Gmail | Keeps contact history intact, avoids losing existing contacts |
-| Fonts | Adobe Fonts (kit `sak1ctd`) | Source Serif Pro (headings) + Akzidenz Grotesk Next Pro (body/UI) — "V2" inverted pairing chosen for brand authenticity |
+| Email | Zoho (DNS on Cloudflare), routed to existing Gmail | Keeps contact history |
+| Fonts | Adobe Fonts (kit `sak1ctd`) | Source Serif Pro (headings) + Akzidenz Grotesk Next Pro (body/UI) |
 
-Astro was chosen for static-first architecture, minimal JS, selective hydration, and hosting independence. React is used only for genuinely interactive islands (the calculator) — never as the default page renderer.
+Astro is used for static-first architecture and selective hydration. React is only for genuinely interactive islands.
 
----
-
-# Design & Typography
+## Design & typography
 
 - `bg-brand-bg` (#f1f8fd), `bg-brand-accent` (#2c3082 deep navy), body text `stone-900`
-- Source Serif Pro → `font-body`, used for headings (H1–H3, lead paragraphs)
-- Akzidenz Grotesk Next Pro → `font-header`, used for body/UI, nav, buttons
-- This is an intentional inversion of the conventional serif/sans pairing, chosen for brand authenticity ("V2")
-- Custom Tailwind values must be nested inside `theme.extend`, not top-level `theme`
-- Config changes (`astro.config.mjs`, `tailwind.config.mjs`) require a dev server restart; `src/` changes hot-reload
+- Source Serif Pro → `font-body` (H1–H3, lead paragraphs); Akzidenz Grotesk Next Pro → `font-header` (body, nav, buttons). An intentional inversion of the usual serif/sans pairing.
+- Custom Tailwind values go inside `theme.extend`
+- Config changes (`astro.config.mjs`, `tailwind.config.mjs`) need a dev server restart; `src/` changes hot-reload
 
 ---
 
 # Page Content Decisions
 
-## About Page Content
+**About:** two-column layout (`grid-cols-1 md:grid-cols-2`). Arc: owner-operated Waihi studio with precision-manufacturing background; 2017 Waihi Beach Gallery, 2022 Artifact Photo and Frame; closing paragraph frames university study as continued curiosity (does not name the degree). LinkedIn link belongs in that study paragraph, not the footer. *Parked:* naming suppliers (Larson-Juhl, Avon, Glasslines); revisit as plain-text "standard we hold ourselves to", never logos.
 
-Final narrative arc (two-column responsive layout, `grid-cols-1 md:grid-cols-2`, border/padding between columns suppressed on mobile via `border-s-0 md:border-s` and `px-0 md:px-12`):
+**Services:** two columns, **Custom Picture Framing** (real, sellable) and **Design & Digital** (ambitious, with italic caveat "Bespoke digital projects — get in touch to discuss scope and pricing."). "Install" service is discontinued.
 
-1. Owner-operated studio in Waihi, precision manufacturing background (carbon fibre racing yachts/super-yachts) connected to framing discipline.
-2. 2017: co-founded Waihi Beach Gallery, found framing through serendipity/local demand. 2022: moved on to start Artifact Photo and Frame independently.
-3. **Closing paragraph** ties in ongoing study at University of Waikato as evidence of continued curiosity/up-skilling — deliberately framed as disposition ("a deliberate choice to keep learning") rather than resume-style credential listing (avoided naming "Bachelor of Interface Design" directly to prevent raising unrelated questions on a framing business page). Ends by naming Artifact Studio as the result of that ongoing curiosity.
+**Contact:** merged with former Opening Hours. Address 51 Seddon Street, Waihi 3610; phone/WhatsApp 027 223 3561; email andrew@artifactstudio.nz; hours (seasonal, reconfirm periodically); Google Maps iframe (no API key). **No contact form** (avoids a server dependency); if wanted later, Web3Forms is the simplest option.
 
-**Parked (not implemented):** naming specific material suppliers (Larson-Juhl, Avon Framing Supplies, Glasslines/Gro-Glass) in About. Originally judged to read as borrowing credibility before the business had established independent reputation. **Note:** the business has an actual trading history from 2023–2026, so the "no independent reputation yet" concern is less of a real issue than first framed — the remaining hesitation is more about tone/optics (not wanting it to read as name-dropping or currying favour) than a substantive credibility gap. Worth revisiting this decision with that in mind; if reintroduced, use plain text mentions only (no logos — trademark risk) and frame as "the standard we hold ourselves to," not a supplier directory.
-
-## Services Page Content
-
-Two-column layout: **Custom Picture Framing** / **Design & Digital**.
-
-- Custom Picture Framing: real, sellable services (Custom Frame Design, Glass Replacement, Frame Cleaning, Canvas Stretching, Cross Stitch and Tapestry, Float and Tray Frames, Sports Jerseys).
-- Design & Digital: intentionally kept ambitious (includes Logo/Branding, Website Design and Development, User Experience & Interface Design) reflecting genuine coursework/assignment capability — **but paired with an italic caveat line**: "Bespoke digital projects — get in touch to discuss scope and pricing." This honestly signals that digital work is priced/scoped case-by-case (a real pricing-process gap, not a skills gap), without underselling capability or hiding it.
-- "Install" (art installation/hanging service) has been **discontinued** due to liability and demand constraints — not listed as a service. Any surviving media mentioning "install" is now understood to mean installation-readiness of the finished framed piece, not an installation service.
-
-## Contact Page Content
-
-Merges the former standalone "Opening Hours" page into Contact (single page, per the project's static-simplicity philosophy).
-
-Includes:
-- Address: 51 Seddon Street, Waihi 3610, New Zealand
-- Phone/WhatsApp: 027 223 3561 (`tel:` link)
-- Email: **andrew@artifactstudio.nz** (`mailto:` link) — replaces legacy `artifactphotoandframe@gmail.com`
-- Opening hours (ported from legacy site — flagged as seasonally variable; worth reconfirming periodically, since old Instagram posts referenced seasonal hour changes)
-- Live Google Maps embed via simple query-string iframe (no API key required): `https://www.google.com/maps?q=51+Seddon+Street,+Waihi,+New+Zealand&output=embed`
-
-**Decision: no contact form for now.** Direct contact details were chosen over a working form to avoid adding a server-side dependency (API route or third-party service) before it's needed. If a form is wanted later, **Web3Forms** is the identified simplest bolt-on (static HTML form + access key, no backend code required).
+**Calculator:** business infrastructure, not marketing. Gated by `CALCULATOR_PASSWORD`, session cookie `frame_auth=ok` (8 h). React island renders only after the server-side auth check. Not linked anywhere public.
 
 ---
 
-# Calculator — Private Access
+# Domain Migration (complete)
 
-The framing calculator is business infrastructure, not marketing content, and is intentionally private.
+`artifactphotoandframe.co.nz` is a second Cloudflare zone; nameservers moved from Vetta. Eight 301 Redirect Rules (static, query string not preserved) map every legacy `?page_id=` URL: Home → `/`; Contact (75) and Opening Hours (89) → `/contact`; About (73) → `/about`; Design (230), Print (286), Frame (64) → `/services`; Install (301, discontinued) → `/`. All tested. Old MX/cPanel mail was never used. Zoho email on `artifactstudio.nz` is unaffected.
 
-- Route: `/calculator`
-- Gated by password (`CALCULATOR_PASSWORD` env var), session cookie `frame_auth=ok`, 8-hour expiry
-- React island (`FramingCalculator.jsx`) only renders after server-side auth check passes
-
-**Decision: not linked in nav or footer.** Same treatment as the Style Guide page — deployed and reachable directly by URL, but deliberately omitted from public navigation, since listing a password-gated internal tool in the public menu contradicts its purpose and adds unnecessary discoverability for bots/competitors. Access via bookmark or direct URL entry only.
+Keep the old domain **registered indefinitely** (redirects run at Cloudflare's edge, no origin needed). Old flyers in circulation still print the old address, which is another reason.
 
 ---
 
-# Domain Migration (Completed This Session)
+# Discoverability (SEO)
 
-Full migration from the legacy WordPress site to the new Astro site, including domain-level redirects, has been completed and tested.
+## Done
 
-## Summary of what was done
+- `public/robots.txt` live (no `Sitemap:` line yet — see To-do)
+- `Layout.astro` props: `title`, `description`, `image?`, `noindex?`. Emits meta description, canonical, Open Graph tags (`og:image` only if a page passes `image`) and optional `noindex`
+- Canonical **keeps the trailing slash** (`/about/`, homepage `/`), matching how Cloudflare Pages actually serves pages
+- Specific titles and descriptions on Home, About, Services, Contact; style guides set `noindex`
+- Favicons: `favicon.svg` (mark only, transparent, navy in light mode and pale in dark mode via `prefers-color-scheme`), `favicon.ico` (16/32/48, navy tile), `apple-touch-icon.png` (180, full-bleed), `favicon-192.png` (192, square). The `.ico` link uses `sizes="any"` because Google prefers multiples of 48px.
+- Search Console: **Domain properties verified for both** `artifactstudio.nz` and `artifactphotoandframe.co.nz` (TXT records in Cloudflare; the old zone needed a manual TXT)
+- Google Business Profile: website link now `https://artifactstudio.nz`; description rewritten as prose
 
-1. Added `artifactphotoandframe.co.nz` as a second zone in the same Cloudflare account as `artifactstudio.nz`.
-2. Confirmed no dependency between Zoho email routing (on `artifactstudio.nz`) and the old domain/Vetta host — clean separation, no risk to email during migration.
-3. Changed nameservers at Vetta from `ns1–ns4.domainhosting.co.nz` to Cloudflare's assigned pair: `garrett.ns.cloudflare.com` / `stella.ns.cloudflare.com`. Zone went active same day.
-4. Built and deployed **8 Cloudflare Redirect Rules** (all 301 Permanent, Static type, query string not preserved) mapping every legacy WordPress URL (plain permalinks, `?page_id=` query strings, no clean slugs) to its new equivalent:
+## Google Business Profile notes
 
-| Old page | Match | New destination |
-|---|---|---|
-| Home (`/`) | path=`/` and query empty | `https://artifactstudio.nz/` |
-| Contact (`page_id=75`) | query = `page_id=75` | `/contact` |
-| About (`page_id=73`) | query = `page_id=73` | `/about` |
-| Opening Hours (`page_id=89`) | query = `page_id=89` | `/contact` (merged) |
-| Design (`page_id=230`) | query = `page_id=230` | `/services` |
-| Print (`page_id=286`) | query = `page_id=286` | `/services` |
-| Frame (`page_id=64`) | query = `page_id=64` | `/services` |
-| Install (`page_id=301`, discontinued service) | query = `page_id=301` | `/` (not Services — service no longer offered, avoid implying continuity) |
-
-5. **All 8 redirects tested and confirmed working** (incognito browser spot-check against each legacy URL).
-6. Old MX record / cPanel mail service on the legacy domain confirmed genuinely unused (never linked to any real mailbox or given out) — safe to let go dead.
-7. **Remaining step:** cancel Vetta hosting (safe now that redirects are live and tested) while **keeping the domain registration active indefinitely** — registration and hosting are separate; only registration needs to persist for the redirect to keep working, since Cloudflare's edge handles the redirect with no origin server required.
-8. **Also recommended, not yet done:** submit a Change of Address in Google Search Console (verify both properties first) to explicitly tell Google the site has moved, and update the Google Business Profile to point at the new domain directly.
+- Name change to **Artifact Studio** is pending; signage already matches. Use the sign's exact wording, no keywords in the name. Upload a signage photo first.
+- Primary category stays **Picture frame shop**. Add only categories for things customers physically buy locally (e.g. printing, photo restoration if available); avoid a digital design/web category, which attracts out-of-area enquiries. Category lists vary by region and change over time.
+- Per-service descriptions aren't available for this listing, so detail lives in the prose description. Services are listed by name, and photos carry the rest.
+- **Social handles are deliberately unchanged** until flyers are reprinted and the GBP name is accepted. Changing the Instagram handle breaks old links; changing only the display name is the lower-risk first step.
 
 ---
 
-# SEO Plan (Next Priority)
+# Analytics (decision: no Plausible for now)
 
-Per project philosophy, SEO work was intentionally postponed until placeholder content was cleared — **that condition is now met** (About/Services/Contact all have real, finalised copy), so SEO work can begin.
+Reviewed Cloudflare zone analytics (30 days): 14.18k requests / "8.82k visits", but mostly bots (US, NL, FR, PL etc.; `wp-login.php` probes; `python-requests`, `Go-http-client`). Filtered to **Country = New Zealand** and excluding AI crawlers, then removing unknown-browser/OS rows: roughly **85 real pageviews, about 50–60 visits, per month**, mostly on **mobile** (about 50 mobile vs 36 desktop), a few via in-app browsers (Instagram/Facebook links).
 
-## Planned steps, in order
+**Decision:** Plausible (about US$9+/month) and self-hosting (about $5–20/month plus maintenance of Postgres and ClickHouse) don't offer realistic value at this volume. Use Cloudflare Web Analytics (free), Search Console and Business Profile insights, and ask new customers how they found the business. Revisit if the site's role grows (calculator, Design & Digital work, portfolio demonstration). If revisited, start with the Plausible Cloud trial and goals for phone, email and map taps.
 
-1. **Sitemap** — add `@astrojs/sitemap` integration to auto-generate `sitemap.xml` on build.
-2. **robots.txt** — allow crawling, reference the sitemap.
-3. **Per-page metadata** — title tags and meta descriptions for Home, About, Services, Contact (avoid generic/leftover titles — note: the old "Services | Your Frame Co." leftover title was already caught and fixed this session; worth double-checking no other pages carry stale template titles).
-4. **Open Graph tags** — og:title, og:description, og:image, og:url per page, wired through `Layout.astro`.
-5. **Canonical URLs** per page.
-6. **Google Search Console** — verify `artifactstudio.nz`, submit sitemap, and use the **Change of Address** tool (requires verifying both old and new properties) to transfer accumulated SEO trust from the legacy domain now that the redirect map is live and tested.
-7. **Google Business Profile** — update to point at the new domain.
-8. Optional/later: structured data (LocalBusiness/Organization schema) — the old Yoast SEO plugin was providing basic schema; worth considering a lightweight equivalent once the above is done, not before.
-
----
-
-# Analytics Plan (After SEO)
-
-Planned platform: **Plausible** (lightweight, privacy-friendly, minimal performance impact) — sequenced last, after content and SEO structure are stable, so measurement reflects the real, finished site rather than a moving target.
-
-## Planned steps
-
-1. Create/confirm Plausible account.
-2. Add the Plausible script tag to `Layout.astro` (or a dedicated analytics partial), scoped to production only if a staging/dev environment is ever introduced.
-3. Confirm no interference with Cloudflare's own bot-management settings (the `artifactphotoandframe.co.nz` zone currently has "Block AI training bots" set to a default of "Block only on pages with ads" — worth reviewing this setting on both zones once analytics are in place, decide deliberately rather than leaving default).
-4. Once live, consider simple goal/event tracking later (e.g., Contact page clicks on phone/email links, or Calculator login attempts) — not needed at initial setup.
-
-Note: Cloudflare Web Analytics was considered as an alternative (zero-cost, already available since Cloudflare is in use for hosting/DNS) but Plausible remains the committed choice per existing project direction — worth revisiting only if there's a concrete reason to switch.
+Useful filter recipe (Cloudflare → Analytics → Add filter): Country equals New Zealand; Verified Bot Category does not equal AI Crawler; then read Top user agents and exclude scripts.
 
 ---
 
 # Rendering Strategy
 
-Default assumption: static generation. Only opt into server rendering when required.
-
-Static: Home, About, Services, Contact, Style Guide.
-Server rendered: Calculator, authentication endpoint.
-
-Goal: keep the public website extremely fast.
-
----
+Static by default. Server-rendered: Calculator and its auth endpoint. Keep the public site extremely fast.
 
 # Hosting Philosophy
 
-Current host: Cloudflare Pages — automatic deployment, CDN, HTTPS, custom domain support, generous free tier.
-
-The project intentionally avoids Cloudflare-specific features where possible. Changing hosts should primarily require changing the Astro adapter rather than rewriting application code.
-
----
+Cloudflare Pages, but avoid Cloudflare-specific features where possible so a host change mostly means swapping the adapter.
 
 # Development Workflow
 
 ```
-edit → test locally (npm run dev) → git add → git commit → git push → Cloudflare builds automatically → Production updates
+edit → test locally (npm run dev) → git add → commit → push → Cloudflare builds → Production
 ```
 
-Running `npm run build` before committing is encouraged — mirrors the Cloudflare build process and catches errors early.
-
-Andrew prefers to be walked through edits file-by-file with specific line changes rather than full file rewrites, and uses VS Code's Source Control panel over terminal Git commands. Pairs local AI (Qwen via Continue extension → Ollama endpoint) with Claude for development work.
-
----
-
-# Component Philosophy
-
-Components represent reusable interface elements rather than isolated pages (navigation, footer, layout, buttons, cards, future testimonials/pricing displays). Pages primarily compose components. Avoid duplication.
+- Andrew prefers file-by-file walkthroughs with specific line changes, not full rewrites, and uses VS Code Source Control over terminal Git. Pairs local AI (Qwen via Continue → Ollama) with Claude.
+- Run `npm run build` before pushing when changing config, packages, integrations, adapters or routes (it mirrors Cloudflare and catches errors the dev server won't). For small content or markup edits, the dev server plus a glance at the Deployments page is enough.
+- A failed Cloudflare build keeps serving the last good deployment.
+- Stop the dev server with Ctrl+C or use a second terminal. Use branches for risky work (e.g. major upgrades).
 
 ---
 
-# Folder Responsibilities
+# Gotchas (hard-won)
 
-```
-layouts/      → Shared page shell
-components/   → Reusable interface
-pages/        → Routing
-assets/       → Processed images
-public/       → Static assets
-styles/       → Global styling only
-```
-
----
-
-# Animation Philosophy
-
-Animation should reinforce usability rather than attract attention. Preferred order: CSS transitions → Tailwind utilities → Astro View Transitions → React animation libraries (only when justified). Motion should remain subtle.
+- **Cloudflare Pages SPA fallback:** with no `404` page, Pages serves the homepage (status 200) for any unknown path, which also made bot probes look like homepage traffic. `404.astro` fixes this; verify `artifactstudio.nz/nothing-here` shows the 404.
+- **Trailing slashes:** Pages serves `/contact/` and 308-redirects `/contact`. Keep canonicals, sitemap and internal links on one form (currently trailing slash).
+- **Cached responses:** `/robots.txt` was cached as the homepage before the file existed; fixed with Cloudflare → Caching → Purge Cache → Custom Purge (URL).
+- **`@astrojs/sitemap` failed** on Astro 4.16.19 + `@astrojs/cloudflare` 11.2.0 with `Cannot read properties of undefined (reading 'reduce')` at `astro:build:done` (no error shown above the stack trace). It silently produces no sitemap locally, and the build exits with an error on Cloudflare. Rolled back (restored `astro.config.mjs`, `package.json`, `package-lock.json` from the commit before). Suspected version mismatch; unconfirmed.
+- `astro add sitemap` installs the latest integration, which may expect a newer Astro. Match versions via `npx @astrojs/upgrade`.
+- **Favicon caching:** browsers and Google cache favicons heavily; Google can take days to weeks. Test in a private window.
+- The old WordPress site (still on Vetta hosting) has been calling the new site (`WordPress/x.x; https://artifactphotoandframe.co.nz` user agent).
 
 ---
 
-# Data Philosophy
+# Component, Folder, Animation and Data Philosophy
 
-Supplier pricing is expected to arrive primarily as CSV/Excel/PDF, not via API. The calculator should consume processed lookup tables rather than raw supplier documents.
-
----
+- Components are reusable interface elements; pages compose them. Avoid duplication.
+- `layouts/` shared shell; `components/` reusable UI; `pages/` routing; `assets/` processed images; `public/` static files; `styles/` global only.
+- Animation reinforces usability: CSS transitions → Tailwind utilities → Astro View Transitions → React animation libraries only when justified.
+- Supplier pricing arrives as CSV/Excel/PDF, not APIs; the calculator consumes processed lookup tables.
 
 # Future Integrations
 
-Possible future additions: Xero, supplier import pipeline, customer quotation workflow, CRM integration, analytics (see Analytics Plan above).
-
-Architecture already decided for Xero: server endpoint pattern (`src/pages/api/pricing.ts`), never direct browser-to-Xero calls. Tokens stored server-side only (Cloudflare secret or equivalent).
-
-Client-side code should never communicate directly with external business APIs.
-
----
+Xero, supplier import pipeline, quotation workflow, CRM. Xero pattern decided: server endpoint (`src/pages/api/pricing.ts`), never browser-to-Xero; tokens server-side only. Client code never talks directly to external business APIs.
 
 # Git Philosophy
 
-Git history is valuable. Commits should represent logical milestones rather than arbitrary saves. GitHub is backup, collaboration point, and deployment trigger. Cloudflare should never become the canonical version of the project.
+Commits are logical milestones, not arbitrary saves. GitHub is backup and deploy trigger; Cloudflare is never canonical.
 
 ---
 
 # Socials
 
-| Platform | URL | Status |
-|---|---|---|
-| Instagram | `artifactphotoandframe` | Live — rebrand to Artifact Studio pending. Business-facing channel: local/visual/customer-facing content |
-| Facebook | profile ID `100085633746216` | Live — rebrand pending |
-| LinkedIn | `linkedin.com/in/andrew-graham-bb25b6251` | Personal profile, not a framing-business funnel. **Decision: link from the About page's career/study narrative (near the "studying design" paragraph), not from the footer's business social icon row** — keeps it discoverable to someone curious about Andrew personally/professionally without competing for attention as a customer channel |
+| Platform | Status |
+|---|---|
+| Instagram `artifactphotoandframe` | Live; rebrand deferred (see GBP notes). Local, visual, customer-facing |
+| Facebook (profile ID `100085633746216`) | Live; rebrand deferred |
+| LinkedIn `linkedin.com/in/andrew-graham-bb25b6251` | Personal; linked from the About study paragraph, not the footer |
 
-Update footer `href` values (Instagram/Facebook) when rebrand URLs are live.
-
-## Social Content Strategy
-
-Andrew's preferred approach is **"create once, reuse across channels"** — the same raw content (photos, process shots, finished work) gets repurposed with different framing/captions per platform's audience, rather than producing separate content for each:
-
-- **Instagram** — local, visual, customer-facing. "Come visit," finished pieces, shop presence.
-- **LinkedIn** (if ever used for the business, not just personal) — process/craft/systems angle, tied to the career transition narrative (e.g., the manufacturing-tolerances-to-framing throughline, "software-informed operational systems design" positioning). Different reason for someone to follow, not "Instagram but professional."
-
-**Also flagged for cleanup:** old Instagram posts referencing outdated/seasonal opening hours should be removed or archived — stale hours in old posts undermine trust if someone scrolls back and finds conflicting information. Consider pinning something evergreen instead (e.g., "current hours always at artifactstudio.nz/contact") so hours never need to live in a time-bound post again.
+"Create once, reuse across channels": same raw content, different framing per audience (Instagram = local/visual; LinkedIn = process/craft/systems angle). Remove or archive old Instagram posts that cite outdated hours, and pin a post pointing to `artifactstudio.nz/contact`. Update footer `href` values when new URLs are live.
 
 ---
 
 # Long-Term Direction
 
-Expected evolution: `business website` → `business platform`.
-
-Likely additions: framing calculator, supplier pricing engine, quotation system, client tools, automation, software demonstrations, development portfolio.
-
-The public-facing website should remain relatively simple even as business functionality grows behind it.
-
----
+`business website` → `business platform`: framing calculator, supplier pricing engine, quotation system, client tools, automation, software demonstrations, development portfolio. The public site stays simple while functionality grows behind it.
 
 # Core Principles
 
-When making architectural decisions, prefer solutions that satisfy the following:
+- Build systems, not pages; prefer composition over duplication
+- Prefer static over dynamic; JavaScript only when necessary
+- Keep business logic separate from presentation
+- Optimise for clarity, maintainability and long-term ownership; keep hosting portable
+- Don't over-promise services ahead of pricing/delivery readiness
+- Don't borrow credibility before independent reputation is established
 
-- Build systems, not pages.
-- Prefer composition over duplication.
-- Prefer static over dynamic.
-- Introduce JavaScript only when necessary.
-- Keep business logic separate from presentation.
-- Optimise for clarity and maintainability.
-- Keep hosting portable.
-- Favour long-term ownership over short-term convenience.
-- Don't over-promise services ahead of genuine pricing/delivery readiness (see Services page).
-- Don't borrow credibility before independent reputation is established (see supplier mentions, parked).
+If a decision conflicts with these, revisit it consciously.
 
-If a future decision conflicts with these principles, they should be revisited consciously rather than accidentally.
+---
+
+# Session Log
+
+## October 2026 — analytics, discoverability and Google presence
+
+- Reviewed Cloudflare analytics; concluded most traffic is bots and real NZ traffic is small; decided against Plausible/self-hosting for now
+- Replaced favicon with a transparent, theme-aware mark; added `.ico`, Apple touch and 192px PNG icons
+- Added `robots.txt`, meta/canonical/Open Graph tags, specific page titles and descriptions, `noindex` on style guides, and a 404 page
+- Attempted `@astrojs/sitemap`; failed on the current Astro version; rolled back cleanly
+- Chose trailing-slash canonicals to match Cloudflare Pages behaviour
+- Verified both domains in Search Console; updated Google Business Profile website link and description
+
+---
+
+# To-do
+
+**Next**
+1. **Upgrade Astro** on a branch (`npx @astrojs/upgrade`; currently 4.16.19). Read the upgrade guide first and go one major version at a time. Likely changes: Astro 5 reworks `hybrid` into default-static with per-page opt-out, so test the calculator and its auth endpoint carefully. Merge only after clicking through every page and the calculator login.
+2. **Re-add the sitemap** after the upgrade: `npx astro add sitemap`, then set `site: 'https://artifactstudio.nz'`, the filter (exclude `/calculator` and `/style-guide`), and the trailing-slash choice. Fallback if it keeps failing: hand-written `public/sitemap.xml` with the four public URLs. Then add the `Sitemap:` line to `robots.txt` (the integration produces `sitemap-index.xml`) and submit it in Search Console.
+3. **Trailing-slash decision:** preferred is `trailingSlash: 'always'` plus updating the eight Cloudflare redirect destinations to slash form (`/contact/` etc.), removing a redirect hop. The alternative (`'never'` with `build.format: 'file'`) is a bigger change to test.
+
+**Google / migration**
+4. File the **Change of Address** in Search Console (old property → Settings → Change of address) if not already done. First check `www.artifactphotoandframe.co.nz` reaches the new site; if not, add a proxied DNS `www` record and a redirect rule.
+5. **Cancel Vetta hosting** (keep the domain registration). The old WordPress site is still making requests to the new one.
+6. Confirm `favicon-192.png` and the `sizes="any"` change are deployed; request indexing of the homepage in Search Console URL Inspection.
+7. Verify the live 404 (`artifactstudio.nz/nothing-here`).
+
+**Business / branding**
+8. After flyers are reprinted and the GBP name is accepted: update Instagram and Facebook (display name first, handle later), update `Footer.astro` hrefs, and archive posts with stale hours.
+9. Keep the old Gmail mailbox active while old flyers circulate; reprint flyers with the new domain.
+10. Search `src/` for remaining "Artifact Photo and Frame" wording.
+11. Optionally record the trading name on NZBN/directories for consistency.
+
+**Later**
+12. Default `og:image` (1200×630 photo of finished work in `public/`).
+13. LocalBusiness/Organization schema (lightweight replacement for what Yoast provided).
+14. Review Cloudflare's "Block AI training bots" setting on both zones deliberately, rather than leaving the default.
+15. Reconfirm seasonal opening hours on Contact and in GBP.
+16. Revisit parked supplier-name mentions on About (see Page Content Decisions).
+17. Revisit analytics if the site's role grows (see Analytics decision).

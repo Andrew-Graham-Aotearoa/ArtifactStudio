@@ -4,23 +4,23 @@
 // Images live in public/images/work/ — add or remove entries in the array below
 
 const images = [
-  { src: '/images/work/frame-01.jpg', alt: 'Custom framing example' },
-  { src: '/images/work/frame-02.jpg', alt: 'Custom framing example' },
-  { src: '/images/work/frame-03.jpg', alt: 'Custom framing example' },
-  { src: '/images/work/frame-04.jpg', alt: 'Custom framing example' },
-  { src: '/images/work/frame-05.jpg', alt: 'Custom framing example' },
-  { src: '/images/work/frame-06.jpg', alt: 'Custom framing example' },
-  { src: '/images/work/frame-07.jpg', alt: 'Custom framing example' },
-  { src: '/images/work/frame-08.jpg', alt: 'Custom framing example' },
-  { src: '/images/work/frame-09.jpg', alt: 'Custom framing example' },
-  { src: '/images/work/frame-10.jpg', alt: 'Custom framing example' },
-  { src: '/images/work/frame-11.jpg', alt: 'Custom framing example' },
-  { src: '/images/work/frame-12.jpg', alt: 'Custom framing example' },
-  { src: '/images/work/frame-13.jpg', alt: 'Custom framing example' },
-  { src: '/images/work/frame-14.jpg', alt: 'Custom framing example' },
-  { src: '/images/work/frame-15.jpg', alt: 'Custom framing example' },
-  { src: '/images/work/frame-16.jpg', alt: 'Custom framing example' },
-  { src: '/images/work/frame-17.jpg', alt: 'Custom framing example' },
+  { src: '/images/work/frame-01.jpg', alt: 'Niue Tapa Cloth ' },
+  { src: '/images/work/frame-02.jpg', alt: 'Niue Tapa Cloth' },
+  { src: '/images/work/frame-03.jpg', alt: 'Original Water Colour' },
+  { src: '/images/work/frame-04.jpg', alt: 'Original Water Colour' },
+  { src: '/images/work/frame-05.jpg', alt: 'WW2 Aviation Map' },
+  { src: '/images/work/frame-06.jpg', alt: 'Two Hats, Two Frames' },
+  { src: '/images/work/frame-07.jpg', alt: 'Racing Overalls' },
+  { src: '/images/work/frame-08.jpg', alt: 'Spinal Tap and mini Amp' },
+  { src: '/images/work/frame-09.jpg', alt: 'War Medals' },
+  { src: '/images/work/frame-10.jpg', alt: 'Hand Made Throw' },
+  { src: '/images/work/frame-11.jpg', alt: 'Bowling Jersey' },
+  { src: '/images/work/frame-12.jpg', alt: 'Tapestry Deer' },
+  { src: '/images/work/frame-13.jpg', alt: 'Singapore Collage Art' },
+  { src: '/images/work/frame-14.jpg', alt: 'Test Cricket Jersey' },
+  { src: '/images/work/frame-15.jpg', alt: 'Chalk Pastel Dogs' },
+  { src: '/images/work/frame-16.jpg', alt: 'Calgary Stampede Poster' },
+  { src: '/images/work/frame-17.jpg', alt: 'Tin Hinan Berber Frame' },
 ];
 ---
 
@@ -42,6 +42,10 @@ const images = [
       <img
         src={image.src}
         alt={image.alt}
+        width="160"
+        height="160"
+        loading="lazy"
+        decoding="async"
         class="carousel-img flex-shrink-0 object-cover"
       />
     ))}
