@@ -28,12 +28,33 @@ GitHub is the source of truth. Never make changes manually in Cloudflare.
 
 **Versions:** Astro 4.16.19, `@astrojs/cloudflare` 11.2.0, `@astrojs/tailwind` 5.1.5, React (islands only). `output: 'hybrid'`.
 
-| Page | Status |
-|---|---|
-| Home, About, Services, Contact | Live, finalised copy |
-| 404 (`src/pages/404.astro`) | Added; confirm it serves on the live site (see Gotchas) |
-| Style Guide (`/style-guide`, `/style-guide2`) | Deployed, unlinked from nav, `noindex` |
-| Calculator (`/calculator`) | Password-gated, unlinked from nav and footer |
+| Page                                              | Status                                                  |
+| ------------------------------------------------- | ------------------------------------------------------- |
+| Home, About, Services, Contact                    | Live, finalised copy                                    |
+| 404 (`src/pages/404.astro`)                     | Added; confirm it serves on the live site (see Gotchas) |
+| Style Guide (`/style-guide`, `/style-guide2`) | Deployed, unlinked from nav, `noindex`                |
+| Calculator (`/calculator`)                      | Password-gated, unlinked from nav and footer            |
+
+
+## October 2026 — Googlebot check and performance pass
+
+- Confirmed Googlebot can crawl and render the site: URL Inspection live test passed for the homepage, and Cloudflare Security → Bots, Security Level and custom rules showed nothing blocking crawlers
+- The stored snapshot in Search Console had listed 26/31 page resources as "Other error" (mostly images); the live test rendered correctly. Likely cause: heavy gallery images exceeding Google's fetch budget
+- PageSpeed Insights (mobile) baseline: Performance 64, LCP 43.5 s, page weight about 14 MB, almost all from the 17 carousel images in `public/images/work/`
+- Resized the carousel images to 640 px wide, then converted them and the hero (`shop-front`) to WebP (`cwebp`/`sharp-cli`, quality about 75, hero resized to 1200 px). Originals are kept outside the repo (`~/Desktop/work-originals`, `~/Desktop/shop-front-original.jpg`)
+- `Carousel.astro`: added `width`/`height`, `loading="lazy"` and `decoding="async"` to the images. Hero `<img>` in `index.astro`: added `fetchpriority="high"`, `decoding="async"` and dimensions, with no lazy loading. Logo given explicit `width`/`height`
+- `Layout.astro`: added `preconnect` hints for `use.typekit.net` and `p.typekit.net` ahead of the Adobe Fonts stylesheet
+- Removed unused `shop-front.png` and the old `.jpg` files
+- Result: PageSpeed mobile Performance 89, SEO 100, Best Practices 100, Accessibility 95. The test throttles to a slow phone on slow 4G, and there is no real-user (CrUX) data yet at this traffic level
+- Decided to stop tuning at 89: remaining items (render-blocking Adobe Fonts CSS, contrast warning) have small gains
+
+**Image conventions going forward**
+
+- Carousel images: WebP, about 480-640 px wide, 15-80 KB each. They display at 160 px (240 px when centred), so larger files are wasted bytes
+- Hero: WebP, about 1200 px wide, not lazy-loaded, `fetchpriority="high"`
+- Always give `<img>` explicit `width` and `height`; lazy-load everything below the fold
+- Compress from the originals, never from an already-compressed copy
+- Consider Astro's `<Image>` (moving images into `src/assets/`) during the Astro upgrade, which would automate resizing and format conversion
 
 ---
 
@@ -58,15 +79,15 @@ Technology is introduced only when it provides genuine benefit.
 
 # Stack
 
-| Layer | Choice | Reason |
-|---|---|---|
-| Framework | Astro (hybrid) | Static by default, islands for interactivity, platform-agnostic |
-| Styling | Tailwind CSS | Predictable, minimal CSS maintenance |
-| Interactivity | React (islands only) | Framing calculator; no SPA |
-| Hosting | Cloudflare Pages | Auto deploy, CDN, HTTPS, free tier |
-| DNS | Cloudflare (both domains) | See Domain Migration |
-| Email | Zoho (DNS on Cloudflare), routed to existing Gmail | Keeps contact history |
-| Fonts | Adobe Fonts (kit `sak1ctd`) | Source Serif Pro (headings) + Akzidenz Grotesk Next Pro (body/UI) |
+| Layer         | Choice                                             | Reason                                                            |
+| ------------- | -------------------------------------------------- | ----------------------------------------------------------------- |
+| Framework     | Astro (hybrid)                                     | Static by default, islands for interactivity, platform-agnostic   |
+| Styling       | Tailwind CSS                                       | Predictable, minimal CSS maintenance                              |
+| Interactivity | React (islands only)                               | Framing calculator; no SPA                                        |
+| Hosting       | Cloudflare Pages                                   | Auto deploy, CDN, HTTPS, free tier                                |
+| DNS           | Cloudflare (both domains)                          | See Domain Migration                                              |
+| Email         | Zoho (DNS on Cloudflare), routed to existing Gmail | Keeps contact history                                             |
+| Fonts         | Adobe Fonts (kit `sak1ctd`)                      | Source Serif Pro (headings) + Akzidenz Grotesk Next Pro (body/UI) |
 
 Astro is used for static-first architecture and selective hydration. React is only for genuinely interactive islands.
 
@@ -182,11 +203,11 @@ Commits are logical milestones, not arbitrary saves. GitHub is backup and deploy
 
 # Socials
 
-| Platform | Status |
-|---|---|
-| Instagram `artifactphotoandframe` | Live; rebrand deferred (see GBP notes). Local, visual, customer-facing |
-| Facebook (profile ID `100085633746216`) | Live; rebrand deferred |
-| LinkedIn `linkedin.com/in/andrew-graham-bb25b6251` | Personal; linked from the About study paragraph, not the footer |
+| Platform                                             | Status                                                                 |
+| ---------------------------------------------------- | ---------------------------------------------------------------------- |
+| Instagram `artifactphotoandframe`                  | Live; rebrand deferred (see GBP notes). Local, visual, customer-facing |
+| Facebook (profile ID `100085633746216`)            | Live; rebrand deferred                                                 |
+| LinkedIn `linkedin.com/in/andrew-graham-bb25b6251` | Personal; linked from the About study paragraph, not the footer        |
 
 "Create once, reuse across channels": same raw content, different framing per audience (Instagram = local/visual; LinkedIn = process/craft/systems angle). Remove or archive old Instagram posts that cite outdated hours, and pin a post pointing to `artifactstudio.nz/contact`. Update footer `href` values when new URLs are live.
 
@@ -225,6 +246,7 @@ If a decision conflicts with these, revisit it consciously.
 # To-do
 
 **Next**
+
 1. **Upgrade Astro** on a branch (`npx @astrojs/upgrade`; currently 4.16.19). Read the upgrade guide first and go one major version at a time. Likely changes: Astro 5 reworks `hybrid` into default-static with per-page opt-out, so test the calculator and its auth endpoint carefully. Merge only after clicking through every page and the calculator login.
 2. **Re-add the sitemap** after the upgrade: `npx astro add sitemap`, then set `site: 'https://artifactstudio.nz'`, the filter (exclude `/calculator` and `/style-guide`), and the trailing-slash choice. Fallback if it keeps failing: hand-written `public/sitemap.xml` with the four public URLs. Then add the `Sitemap:` line to `robots.txt` (the integration produces `sitemap-index.xml`) and submit it in Search Console.
 3. **Trailing-slash decision:** preferred is `trailingSlash: 'always'` plus updating the eight Cloudflare redirect destinations to slash form (`/contact/` etc.), removing a redirect hop. The alternative (`'never'` with `build.format: 'file'`) is a bigger change to test.
@@ -248,3 +270,9 @@ If a decision conflicts with these, revisit it consciously.
 15. Reconfirm seasonal opening hours on Contact and in GBP.
 16. Revisit parked supplier-name mentions on About (see Page Content Decisions).
 17. Revisit analytics if the site's role grows (see Analytics decision).
+
+18. Fix the Accessibility contrast warning (Accessibility 95): expand the "Background and foreground colors do not have a sufficient contrast ratio" item in PageSpeed to see which element, likely light text or a button on navy
+19. Give each carousel image specific alt text (currently all "Custom framing example")
+
+18. Fix the Accessibility contrast warning (Accessibility 95): expand the "Background and foreground colors do not have a sufficient contrast ratio" item in PageSpeed to see which element, likely light text or a button on navy
+19. Give each carousel image specific alt text (currently all "Custom framing example")
