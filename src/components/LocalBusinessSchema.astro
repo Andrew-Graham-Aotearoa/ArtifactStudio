@@ -1,0 +1,37 @@
+---
+import { openingHours } from '../data/hours';
+
+const schema = {
+  '@context': 'https://schema.org',
+  '@type': 'LocalBusiness',
+  '@id': 'https://artifactstudio.nz/#business',
+  name: 'Artifact Studio',
+  alternateName: 'Artifact Photo and Frame',
+  description:
+    'Custom picture framing studio in Waihi, New Zealand, with print and photo restoration services.',
+  url: 'https://artifactstudio.nz/',
+  telephone: '+64 27 223 3561',
+  email: 'andrew@artifactstudio.nz',
+  image: 'https://artifactstudio.nz/images/shop-front.webp',
+  address: {
+    '@type': 'PostalAddress',
+    streetAddress: '51 Seddon Street',
+    addressLocality: 'Waihi',
+    postalCode: '3610',
+    addressCountry: 'NZ',
+  },
+  areaServed: ['Waihi', 'Waihi Beach', 'Paeroa', 'Katikati', 'Omokoroa', 'Whangamata', 'Thames'],
+  openingHoursSpecification: openingHours.map((h) => ({
+    '@type': 'OpeningHoursSpecification',
+    dayOfWeek: h.days,
+    opens: h.opens,
+    closes: h.closes,
+  })),
+  sameAs: [
+    'https://www.instagram.com/artifactphotoandframe',
+    'https://www.facebook.com/profile.php?id=100085633746216',
+  ],
+};
+---
+
+<script type="application/ld+json" set:html={JSON.stringify(schema)} />
