@@ -21,12 +21,14 @@ const schema = {
     addressCountry: 'NZ',
   },
   areaServed: ['Waihi', 'Waihi Beach', 'Paeroa', 'Katikati', 'Omokoroa', 'Whangamata', 'Thames'],
-  openingHoursSpecification: openingHours.map((h) => ({
-    '@type': 'OpeningHoursSpecification',
-    dayOfWeek: h.days,
-    opens: h.opens,
-    closes: h.closes,
-  })),
+   openingHoursSpecification: openingHours
+    .filter((h) => h.opens && h.closes)
+    .map((h) => ({
+      '@type': 'OpeningHoursSpecification',
+      dayOfWeek: h.day,
+      opens: h.opens,
+      closes: h.closes,
+    })),
   sameAs: [
     'https://www.instagram.com/artifactphotoandframe',
     'https://www.facebook.com/profile.php?id=100085633746216',

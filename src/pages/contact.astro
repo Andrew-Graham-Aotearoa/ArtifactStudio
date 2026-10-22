@@ -1,5 +1,6 @@
 ---
 import Layout from "../layouts/Layout.astro";
+import { openingHours, formatTime } from '../data/hours';
 ---
 
 <Layout title="Contact and Opening Hours | Artifact Studio,
@@ -35,13 +36,11 @@ import Layout from "../layouts/Layout.astro";
         <div>
           <h2 class="text-2xl font-header font-bold">Opening Hours</h2>
           <ul class="mt-2 text-stone-500 font-body leading-relaxed space-y-1">
-            <li>Monday: 10am - 4pm</li>
-            <li>Tuesday: 10am – 4pm</li>
-            <li>Wednesday: 10am - 4 pm</li>
-            <li>Thursday: 10am – 4pm</li>
-            <li>Friday: 10am – 4pm </li>
-            <li>Saturday: 10am – 2pm</li>
-            <li>Sunday: Closed</li>
+            {openingHours.map((h) => (
+              <li>
+                {h.day}: {h.opens && h.closes ? `${formatTime(h.opens)} – ${formatTime(h.closes)}` : 'Closed'}
+              </li>
+            ))}
           </ul>
         </div>
       </div>
