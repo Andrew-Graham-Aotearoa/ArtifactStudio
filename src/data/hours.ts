@@ -4,12 +4,12 @@ export type DayHours = { day: string; opens?: string; closes?: string };
 
 export const openingHours: DayHours[] = [
   { day: 'Monday', opens: '10:00', closes: '16:00' },
-  { day: 'Tuesday', opens: '10:00', closes: '16:00' },
-  { day: 'Wednesday' },
+  { day: 'Tuesday'  },
+  { day: 'Wednesday', opens: '10:00', closes: '16:00'},
   { day: 'Thursday', opens: '10:00', closes: '16:00' },
   { day: 'Friday', opens: '10:00', closes: '16:00' },
   { day: 'Saturday', opens: '10:00', closes: '14:00' },
-  { day: 'Sunday' },
+  { day: 'Sunday', opens: '10:00', closes: '14:00'},
 ];
 
 // 16:00 -> "4pm", 09:30 -> "9:30am"
