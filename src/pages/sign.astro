@@ -1,0 +1,146 @@
+---
+// src/pages/sign.astro
+// Open-hours display for the old iPad. Deliberately has no layout, no Tailwind and no bundled JS:
+// the style and scripts are is:inline so Astro leaves them as written (old Safari cannot run module scripts).
+import * as H from '../data/hours';
+
+const { openingHours, formatTime } = H;
+
+// Optional one-off changes, exported from hours.ts (see the note in the reply). Safe if it does not exist yet.
+const exceptions = (H as any).exceptions ?? {};
+
+// Sunday first, to match JavaScript's getDay().
+const names = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+const weekly = names.map((name) => {
+  const d = openingHours.find((x) => x.day === name);
+  return d && d.opens && d.closes ? { opens: d.opens, closes: d.closes } : null;
+});
+
+const data = JSON.stringify({ weekly, exceptions });
+---
+<!DOCTYPE html>
+<html lang="en-NZ">
+<head>
+  <meta charset="utf-8">
+  <title>Open Hours | Artifact Studio</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">
+  <meta name="robots" content="noindex">
+  <meta http-equiv="refresh" content="300">
+  <link rel="preconnect" href="https://use.typekit.net">
+  <link rel="stylesheet" href="https://use.typekit.net/sak1ctd.css">
+  <style is:inline>
+    /* Brand: bg #f1f8fd, accent #2c3082, text stone-900, muted stone-600. Source Serif Pro 400 heading, Akzidenz Grotesk Next Pro 500/900. */
+    /* Old-Safari-safe: no flex gap, grid, custom properties, clamp() or inset. Sizes use vmin so portrait and landscape both fit. */
+    html, body { margin: 0; padding: 0; background: #f1f8fd; }
+    body {
+      font-family: "akzidenz-grotesk-next-pro", "Helvetica Neue", Helvetica, Arial, sans-serif;
+      font-weight: 500;
+      color: #1c1917;
+      -webkit-text-size-adjust: 100%;
+    }
+    .wrap { padding: 7vmin 7vmin 5vmin; }
+    h1 {
+      margin: 0 0 5vmin;
+      font-family: "source-serif-pro", Georgia, "Times New Roman", serif;
+      font-size: 12vmin; line-height: 1.05; font-weight: 400;
+      color: #2c3082;
+    }
+    table { width: 100%; border-collapse: collapse; }
+    td {
+      font-size: 6.2vmin; font-weight: 500;
+      padding: 1.7vmin 0;
+      border-top: 1px solid #d6d3d1;
+      vertical-align: baseline;
+      white-space: nowrap;
+    }
+    tr:first-child td { border-top: 0; }
+    td.day { width: 44%; padding-left: 2.4vmin; }
+    td.date { width: 24%; text-align: center; font-size: 4.2vmin; color: #57534e; }
+    td.hrs { width: 32%; text-align: right; padding-right: 2.4vmin; }
+    tr.today td { background: #2c3082; color: #f1f8fd; font-weight: 900; border-top-color: #2c3082; }
+    tr.today td.date { color: #f1f8fd; font-weight: 500; }
+    .status { margin: 5vmin 0 0; font-size: 5.4vmin; font-weight: 900; color: #2c3082; text-align: center; font-variant: small-caps; }
+    .stamp { margin: 2vmin 0 0; font-size: 3.4vmin; color: #78716c; }
+    /* @media (orientation: landscape) {
+      h1 { font-size: 9vmin; margin-bottom: 3vmin; }
+      td { font-size: 4.8vmin; padding: 1.1vmin 0; }
+      td.date { font-size: 3.4vmin; }
+      .status { font-size: 4.4vmin; margin-top: 3vmin; text-align: center; font-variant: small-caps;}
+    } */
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <h1 class="text-8xl font-header font-black leading-relaxed">Open Hours</h1>
+    <table>
+      <tbody id="rows">
+        {/* Shown only if the script cannot run. Built from hours.ts at build time. */}
+        {openingHours.map((d) => (
+          <tr>
+            <td class="day">{d.day}</td>
+            <td class="date"></td>
+            <td class="hrs">{d.opens && d.closes ? `${formatTime(d.opens)} \u2013 ${formatTime(d.closes)}` : 'Closed'}</td>
+          </tr>
+        ))}
+      </tbody>
+    </table>
+    <p class="status" id="status"></p>
+    <p class="stamp" id="stamp"></p>
+  </div>
+
+  <script id="sign-data" type="application/json" is:inline set:html={data}></script>
+
+  <script is:inline>
+  (function () {
+    var DAYS = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+    var MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+
+    var data = JSON.parse(document.getElementById('sign-data').textContent);
+    var WEEKLY = data.weekly;          // Sunday first; null = closed
+    var EXCEPTIONS = data.exceptions;  // 'YYYY-MM-DD': {} closed, or { opens, closes }
+
+    function pad(n) { return (n < 10 ? '0' : '') + n; }
+    function key(d) { return d.getFullYear() + '-' + pad(d.getMonth() + 1) + '-' + pad(d.getDate()); }
+    function h12(h) { return h % 12 || 12; }
+    function parts(t) { var p = t.split(':'); return { h: Number(p[0]), m: Number(p[1] || 0) }; }
+    function decimal(t) { var q = parts(t); return q.h + q.m / 60; }
+    function hm(t) { var q = parts(t); return h12(q.h) + (q.m ? ':' + pad(q.m) : ''); }
+    function hmAmPm(t) { return hm(t) + (parts(t).h < 12 ? 'am' : 'pm'); }
+
+    function hoursFor(d) {
+      var k = key(d);
+      var x = EXCEPTIONS.hasOwnProperty(k) ? EXCEPTIONS[k] : WEEKLY[d.getDay()];
+      return (x && x.opens && x.closes) ? x : null;
+    }
+    function span(x) { return x ? hm(x.opens) + ' \u2013 ' + hm(x.closes) : 'Closed'; }
+
+    var now = new Date();
+    var rows = '', i, d, x;
+
+    for (i = 0; i < 7; i++) {
+      d = new Date(now.getFullYear(), now.getMonth(), now.getDate() + i);
+      x = hoursFor(d);
+      rows += '<tr' + (i === 0 ? ' class="today"' : '') + '>' +
+              '<td class="day">' + DAYS[d.getDay()] + '</td>' +
+              '<td class="date">' + d.getDate() + ' ' + MONTHS[d.getMonth()] + '</td>' +
+              '<td class="hrs">' + span(x) + '</td></tr>';
+    }
+    document.getElementById('rows').innerHTML = rows;
+
+    var t = now.getHours() + now.getMinutes() / 60;
+    var today = hoursFor(now);
+    var status;
+    if (today && t >= decimal(today.opens) && t < decimal(today.closes)) { status = 'Open now until ' + hmAmPm(today.closes); }
+    else if (today && t < decimal(today.opens)) { status = 'opens today at ' + hmAmPm(today.opens); }
+    else { status = 'closed now'; }
+    document.getElementById('status').innerHTML = status;
+
+    var hr = now.getHours();
+    document.getElementById('stamp').innerHTML =
+      'Updated ' + h12(hr) + ':' + pad(now.getMinutes()) + (hr < 12 ? 'am' : 'pm');
+  })();
+  </script>
+</body>
+</html>
