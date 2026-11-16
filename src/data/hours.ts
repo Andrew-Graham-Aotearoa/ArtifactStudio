@@ -19,3 +19,9 @@ export function formatTime(t: string): string {
   const hour = h % 12 || 12;
   return m ? `${hour}:${String(m).padStart(2, '0')}${suffix}` : `${hour}${suffix}`;
 }
+
+// One-off changes for the sign, by date. {} means closed.
+export const exceptions: Record<string, { opens?: string; closes?: string }> = {
+   '2026-11-17': {},
+  // '2026-12-24': { opens: '10:00', closes: '12:00' },
+};
