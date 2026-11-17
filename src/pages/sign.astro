@@ -62,13 +62,7 @@ const data = JSON.stringify({ weekly, exceptions });
     tr.today td { background: #2c3082; color: #f1f8fd; font-weight: 900; border-top-color: #2c3082; }
     tr.today td.date { color: #f1f8fd; font-weight: 500; }
     .status { margin: 5vmin 0 0; font-size: 5.4vmin; font-weight: 900; color: #2c3082; text-align: center; font-variant: small-caps; }
-    .stamp { margin: 2vmin 0 0; font-size: 3.2vmin; color: #78716c; text-align: right; }
-    /* @media (orientation: landscape) {
-      h1 { font-size: 9vmin; margin-bottom: 3vmin; }
-      td { font-size: 4.8vmin; padding: 1.1vmin 0; }
-      td.date { font-size: 3.4vmin; }
-      .status { font-size: 4.4vmin; margin-top: 3vmin; text-align: center; font-variant: small-caps;}
-    } */
+    .stamp { margin: 2vmin 0 0; font-size: 3.2vmin; color: #78716c; text-align: right; font-variant: small-caps; }
   </style>
 </head>
 <body>
@@ -136,10 +130,11 @@ const data = JSON.stringify({ weekly, exceptions });
     else if (today && t < decimal(today.opens)) { status = 'opens today at ' + hmAmPm(today.opens); }
     else if (!today) { status = 'closed today'; }
     else { status = 'closed now'; }
+    document.getElementById('status').innerHTML = status;
 
     var hr = now.getHours();
     document.getElementById('stamp').innerHTML =
-      'Updated ' + h12(hr) + ':' + pad(now.getMinutes()) + (hr < 12 ? 'am' : 'pm');
+      'updated ' + h12(hr) + ':' + pad(now.getMinutes()) + (hr < 12 ? 'am' : 'pm');
   })();
   </script>
 </body>
