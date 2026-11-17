@@ -134,7 +134,7 @@ const data = JSON.stringify({ weekly, exceptions });
 
     var hr = now.getHours();
     document.getElementById('stamp').innerHTML =
-      'updated ' + h12(hr) + ':' + pad(now.getMinutes()) + (hr < 12 ? 'am' : 'pm');
+      'updated ' + h12(hr) + ':' + pad(now.getMinutes()) + (hr < 12 ? ' am' : ' pm');
   })();
   </script>
 </body>
