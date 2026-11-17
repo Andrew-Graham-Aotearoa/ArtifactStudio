@@ -34,7 +34,7 @@ GitHub is the source of truth. Never make changes manually in Cloudflare.
 | 404 (`src/pages/404.astro`) | Live |
 | Style Guide (`/style-guide`, `/style-guide2`) | Deployed, unlinked, `noindex` |
 | Calculator (`/calculator`) | Password-gated, unlinked from nav and footer |
-| Sign (`/sign/`) | Standalone open-hours display for the shop iPad; unlinked, `noindex`, not in the sitemap. See Sign Display |
+| Sign (`/sign/`) | Live and running on the shop iPad; unlinked, `noindex`, not in the sitemap. Design finished (Nov 2026). See Sign Display |
 
 Mobile PageSpeed (Oct 2026): Performance 92, Accessibility 95, Best Practices 100, SEO 100.
 
@@ -73,7 +73,7 @@ If a decision conflicts with these, revisit it consciously.
 | Email | Zoho (DNS on Cloudflare), routed to existing Gmail | Keeps contact history |
 | Fonts | Adobe Fonts (kit `sak1ctd`, served from `use.typekit.net`) | Source Serif Pro + Akzidenz Grotesk Next Pro |
 
-**Rendering:** static by default. Server-rendered: the Calculator and its auth endpoint. Keep the public site extremely fast. The sign page is prerendered static HTML, but deliberately bypasses the layout, Tailwind and bundled JS (see Sign Display).
+**Rendering:** static by default. Server-rendered: the Calculator and its auth endpoint. Keep the public site extremely fast. The sign page is prerendered static HTML. It bypasses the layout and bundled JS and uses no Tailwind classes, but Tailwind's base reset still reaches it (see Sign Display and Gotchas).
 
 ## Design and typography
 
@@ -118,39 +118,50 @@ The one exception is `pages/sign.astro`, which is a self-contained page with no 
 
 # Sign Display (`/sign/`)
 
-A standalone page for an always-on old iPad in the shop, showing the opening hours. The aim is that hours are edited in **one place** (`src/data/hours.ts`, plus Google Business Profile) and the sign follows. The sign is a convenience display, so it must never show "open" when the shop is closed.
+A standalone page for an always-on old iPad in the shop, showing the opening hours. Hours are edited in **one place** (`src/data/hours.ts`, plus Google Business Profile) and the sign follows. The sign is a convenience display, so it must never show "open" when the shop is closed.
+
+**Status: finished and running (Nov 2026).** `src/pages/sign.astro` is live, `public/sign.html` (the first test version) has been deleted, and the design was signed off on the iPad. Treat further visual changes as optional.
 
 ## Device and constraints
 
-- Old iPad on iOS 9/10-era Safari. The exact model and iOS version are unconfirmed; check Settings → General → About. It loads `artifactstudio.nz` over HTTPS (padlock shows) and the Adobe Fonts load, but the normal site renders badly: flex `gap` is unsupported (the nav items run together) and it gets the stacked mobile layout.
-- Kiosk setup on the iPad: open `/sign/`, Share → Add to Home Screen (full screen, no Safari bars; viewport height is noticeably better this way), Auto-Lock → Never, Guided Access on, Date & Time set automatically (NZ).
+- **iPad 4th generation, model MD527B/A, iOS 10.3.4** (the last iOS this model can run). The "11.8" shown in Settings → General → About is the **modem firmware**, not iOS. Safari is iOS 10-era.
+- It loads `artifactstudio.nz` over HTTPS and the Adobe Fonts load. The normal site renders badly on it: flex `gap` is unsupported (the nav items run together) and it gets the stacked mobile layout.
+- **Kiosk setup:** open `/sign/` in Safari, Share → Add to Home Screen, then **launch from the Home Screen icon**. Launched that way there is no URL bar or tools, only the thin iOS status bar, so no mat is needed. Opened in a plain Safari tab the bars always show, and nothing in the page can hide them. Guided Access cannot hide them either. After changing meta tags or after a bad state, delete the icon, clear Settings → Safari → Clear History and Website Data, and re-add it.
+- Also set: Auto-Lock → Never, Guided Access on, Date & Time automatic (NZ).
 - The sign trusts the iPad's clock for the dates, the "today" row and the open/closed status, so a wrong clock means a wrong sign.
-- It is always on and always charging. The battery is about 14 years old: check it for swelling, keep it ventilated if it is ever enclosed, and note the backlight stays on overnight (iOS 9 has no schedule).
+- It is always on and always charging. Check that the charger is actually on (it was once switched off by accident; the battery dropped to 18%). The battery is about 14 years old: check it for swelling, keep it ventilated if it is ever enclosed, and note the backlight stays on overnight (iOS 10 has no schedule).
 
 ## Implementation rules (do not break these)
 
-- `src/pages/sign.astro` has **no layout, no Tailwind and no bundled JS**. Everything is hand-written inside the page.
+- `src/pages/sign.astro` has **no layout, no Tailwind classes and no bundled JS**. Everything is hand-written inside the page. Do not put Tailwind utility classes on its elements; they do nothing.
+- **Tailwind's base reset (preflight) still loads on this page**, because the Astro Tailwind integration injects it into every page. It sets `h1`–`h6 { font-size: inherit; font-weight: inherit }`. A plain `h1 { ... }` rule loses to it, which is why the heading rule is `.wrap h1 { ... }` (higher specificity). Keep any element-selector rule scoped under a class, and expect other resets (margins, borders, box-sizing) to apply too.
 - Use `<style is:inline>` and `<script is:inline>`. Astro bundles a plain `<script>` as a module, which old Safari will not run; `is:inline` leaves the code exactly as written (and stops style scoping).
 - JavaScript is **ES5 only**: `var`, `function`, no arrow functions, template literals, `fetch`, `async`, `Intl` or `padStart`. Avoid ES3 reserved words as names (`short`, `long`).
 - CSS is old-Safari-safe: a `<table>` for the grid, `vmin` sizes (so portrait and landscape both fit), and no flex `gap`, grid, custom properties, `clamp()`, `inset` or `aspect-ratio`.
 - Hours reach the browser as JSON in `<script id="sign-data" type="application/json" is:inline set:html={data}>` and are read with `JSON.parse(document.getElementById('sign-data').textContent)`.
 - `noindex`, not linked anywhere, not in `sitemap.xml`.
 - `<meta http-equiv="refresh" content="300">` reloads the page every 5 minutes. If a reload fails, Safari shows its own error page, which fails loudly instead of leaving a stale "open".
+- `apple-mobile-web-app-capable` must stay in the head (it is what removes the Safari bars from the Home Screen icon).
 - If the script cannot run, the table falls back to the weekly hours, built at build time from `hours.ts` with `formatTime`.
+- The header comment in `sign.astro` still says "no Tailwind"; it should say "no Tailwind classes (preflight still applies)".
 
 ## Layout and styling
 
-- Heading "Open Hours" in Source Serif Pro 400, `#2c3082`.
+- Heading "Open Hours" in Source Serif Pro 400, `#2c3082`, large (12vmin), set by `.wrap h1`.
 - A rolling seven days starting today, in three columns: day (left, 44%), date (centred, 24%, e.g. "17 Nov") and hours (right-aligned, 32%, e.g. "10 – 4", matching the printed sign).
 - Today's row is inverted: `#2c3082` background, `#f1f8fd` text, weight 900.
-- Under the table: a status line ("Open now until 4pm", "Opens today at 10am", "Closed now") and a small "Updated 5:19pm" time, so a stale page is visible.
+- Under the table: a **status line** (centred, small-caps, navy, weight 900) and a small **"updated 4:54pm" stamp** (right-aligned, small-caps, grey), so a stale page is visible. The `.wrap` padding and row padding were tuned so the stamp fits in portrait without scrolling; the values are in the file.
+- The script writes the status and stamp in lowercase and CSS small-caps does the styling. Keep them lowercase so the first letter does not render as a large capital.
+- **Known quirk, accepted:** small-caps shrinks letters but not digits, so numerals in the status ("until 4pm") and the stamp ("4:54") render slightly larger than the letters around them. It was reviewed and judged fine. If it ever bothers, the alternative is `text-transform: uppercase` with a smaller font-size and a little letter-spacing, which makes letters and digits the same size.
 - A date range under the heading was tried and removed as redundant, since each row shows its date.
-- Colours: background `#f1f8fd`, accent `#2c3082`, text stone-900 `#1c1917`, muted stone-600 `#57534e`, row rules stone-300 `#d6d3d1`, "Updated" time stone-500 `#78716c`. The stone values are Tailwind palette picks and are not named in the style guide tokens.
-- Type: Akzidenz Grotesk Next Pro at weights **500 and 900 only** (the weights in the Adobe kit; anything else is faux-bolded). The page links the kit directly (`https://use.typekit.net/sak1ctd.css`). The CSS family names used are `"source-serif-pro"` and `"akzidenz-grotesk-next-pro"`; confirm them against `tailwind.config.mjs`.
+- Colours: background `#f1f8fd`, accent `#2c3082`, text stone-900 `#1c1917`, muted stone-600 `#57534e`, row rules stone-300 `#d6d3d1`, stamp stone-500 `#78716c`. The stone values are Tailwind palette picks and are not named in the style guide tokens.
+- Type: Akzidenz Grotesk Next Pro at weights **500 and 900 only** (the weights in the Adobe kit; anything else is faux-bolded). The page links the kit directly (`https://use.typekit.net/sak1ctd.css`). The CSS family names used are `"source-serif-pro"` and `"akzidenz-grotesk-next-pro"`; both render correctly on the iPad.
+- Portrait is the mounted orientation. A landscape `@media` block was written and then removed; if the iPad is ever mounted landscape, re-check the fit.
 
 ## Data and behaviour
 
 - `hours.ts` exports `openingHours` (Monday first; `opens`/`closes` as 24-hour `HH:MM`; a day with neither is Closed) and `formatTime`.
+- Status line wording: `open now until 4pm` (inside hours), `opens today at 10am` (before opening), `closed today` (a day with no hours at all), `closed now` (after closing on a day that had hours).
 - Optional one-off closures: add an `exceptions` export to `hours.ts`, keyed by date:
 
   ```ts
@@ -161,20 +172,19 @@ A standalone page for an always-on old iPad in the shop, showing the opening hou
   ```
 
   `sign.astro` imports `hours.ts` as a namespace and falls back to `{}`, so the build works without the export. The Contact page and the JSON-LD ignore `exceptions`; set GBP **special hours** for the same days.
-- A closure renders like Tuesday: that date's row shows "Closed" and appears once the date is within the seven-day window; on the day the status line reads "Closed now". Short hours render as "10 – 12" with no special marker.
+- A closure renders like Tuesday: that date's row shows "Closed" and appears once the date is within the seven-day window; on the day the status line reads "closed today". Short hours render as "10 – 12" with no special marker.
 - Changing hours needs a push and a Cloudflare build (about a minute or two), then the iPad picks the change up at its next 5-minute reload.
 
-## Status
+## Diagnosing a sign that looks wrong
 
-- `public/sign.html` was the first test version, with the hours copied in by hand. Tested on the iPad: it loads and looks fine.
-- `src/pages/sign.astro` is the real version, reading `hours.ts`. It is written but not yet built or tested in the repo: run `npm run build`, check `/sign/` on the iPad, then delete `public/sign.html`.
+1. Load `https://artifactstudio.nz/sign/` on the Mac and compare with `localhost`. If the live page on the Mac matches the iPad but not localhost, the problem is the deployment, not the iPad. Redeploy (empty commit or "Retry deployment") and check the Deployments page shows the latest commit.
+2. If the Mac matches localhost and the iPad does not, clear Safari data and re-add the Home Screen icon.
+3. Do not recreate `public/sign.html`. Cloudflare Pages treats `/sign` and `/sign.html` as the same URL, and a leftover static file can be served instead of the built Astro page. This was suspected (not confirmed) when the live page once lagged behind localhost; a redeploy fixed it.
 
-## Ideas and next steps
+## Ideas (optional)
 
-- "Closed today" wording for all-day closures (instead of "Closed now"), plus an optional `note` field in `exceptions` (for example "Public holiday" or "Back Wednesday") shown under the hours.
-- Confirm the Adobe font family names and weights render correctly on the iPad.
-- Check landscape fits without scrolling.
-- Check the iPad's battery before leaving it on charge long term.
+- An optional `note` field in `exceptions` (for example "Public holiday" or "Back Wednesday") shown under the hours.
+- Check the iPad's battery condition and charging periodically.
 
 ---
 
@@ -243,6 +253,7 @@ edit → test locally (npm run dev) → git add → commit → push → Cloudfla
 - Run `npm run build` before pushing when changing config, packages, integrations, adapters or routes (it mirrors Cloudflare). For small content or markup edits, the dev server plus a glance at the Deployments page is enough
 - A failed Cloudflare build keeps serving the last good deployment
 - Use branches for risky work (e.g. major upgrades). Commits are logical milestones, not arbitrary saves
+- Photos or screenshots of the real device and browser DevTools are the fastest way to diagnose rendering problems; the sign page is only trustworthy once checked on the iPad itself, since localhost on a Mac can look correct while the iPad does not
 
 ---
 
@@ -256,7 +267,11 @@ edit → test locally (npm run dev) → git add → commit → push → Cloudfla
 - **Search Console snapshot vs live test:** the stored crawl can list many resources as "Other error" when pages are heavy; judge with Test Live URL
 - **Favicon caching:** browsers and Google cache favicons heavily; test in a private window
 - **Astro scripts on old Safari:** a plain `<script>` in an `.astro` file is bundled as a module, which old iOS Safari will not run. Anything the sign page needs must be `<script is:inline>` and written in ES5
-- **Tailwind on old Safari:** Tailwind's output uses features old iOS Safari lacks (flex `gap`, `inset`, newer colour syntax). This is why the main site's nav runs together on the old iPad and why `/sign/` is hand-written CSS
+- **Tailwind on old Safari:** Tailwind's output uses features old iOS Safari lacks (flex `gap`, `inset`, newer colour syntax). This is why the main site's nav runs together on the old iPad and why `/sign/` uses hand-written CSS
+- **Tailwind preflight on pages with no layout:** the Tailwind integration injects its base reset into every page, including `sign.astro`. Plain element selectors (`h1 { ... }`) lose to it on font-size and font-weight; scope them under a class (`.wrap h1`). Dev tools showing a rule struck through is the symptom
+- **iPad sign vs localhost out of sync:** once the live page lagged behind localhost although Cloudflare showed the latest commit; a redeploy fixed it. Cause unconfirmed (a leftover `public/sign.html` shadowing `/sign/` was the leading suspect). See Diagnosing a sign that looks wrong
+- **iPad "firmware" numbers:** Settings → General → About can show the modem firmware (e.g. 11.8) next to the iOS version (10.3.4). Read the Version line, not the modem line, when deciding which web features are safe
+- **`font-variant: small-caps` and digits:** digits are not shrunk, so numbers look larger than the capitals around them. Cosmetic; accepted on the sign
 - The old WordPress site (still on Vetta hosting) keeps calling the new site (`WordPress/x.x; https://artifactphotoandframe.co.nz` user agent)
 
 ---
@@ -283,13 +298,17 @@ Xero, supplier import pipeline, quotation workflow, CRM. Xero pattern decided: a
 
 # Session Log
 
-## November 2026: sign display
+## November 2026: sign display (finished)
 
-- Built an open-hours display page for an old iPad whose Safari cannot render the normal Astro/Tailwind pages: first as `public/sign.html`, then as `src/pages/sign.astro` reading `src/data/hours.ts`
-- Styled from the brand tokens and fonts (Source Serif Pro heading, Akzidenz Grotesk Next Pro 500/900, navy today row); three columns (day, centred date, right-aligned hours) over a rolling seven days, with an open/closed status line and an "Updated" time
-- Tested `public/sign.html` on the iPad: loads over HTTPS and looks fine; works best from the Home Screen
+- Built an open-hours display page for an old iPad whose Safari cannot render the normal Astro/Tailwind pages: first as `public/sign.html`, then as `src/pages/sign.astro` reading `src/data/hours.ts`. `public/sign.html` has since been deleted
+- Styled from the brand tokens and fonts (Source Serif Pro heading, Akzidenz Grotesk Next Pro 500/900, navy today row); three columns (day, centred date, right-aligned hours) over a rolling seven days, with a status line and an "updated" stamp
+- Identified the device as an iPad 4th gen (MD527B/A) on iOS 10.3.4; the 11.8 figure was the modem firmware
+- Fixed the Safari bars by launching from a re-added Home Screen icon (no mat needed)
+- Found that Tailwind preflight loads on the sign page and overrode the `h1` rule; scoped it as `.wrap h1`
+- Added "closed today" wording for all-day closures; reordered the status text to lowercase to suit small-caps; right-aligned the stamp; tightened top padding so the stamp fits in portrait
+- Live page once lagged behind localhost; a redeploy synced it (cause unconfirmed)
 - Decided hours are updated only in `hours.ts` and Google Business Profile; designed an optional date-keyed `exceptions` export for one-off closures (sign only)
-- Documented the old-Safari rules in Sign Display and Gotchas
+- Signed off the design; left the small-caps digit-size quirk as is
 
 ## October 2026: crawlability, performance, sitemap, structured data
 
@@ -325,16 +344,16 @@ Xero, supplier import pipeline, quotation workflow, CRM. Xero pattern decided: a
 9. **Trailing-slash decision:** preferred is `trailingSlash: 'always'` plus updating the eight Cloudflare redirect destinations to slash form, removing a redirect hop
 
 **Maintenance**
-10. **Upgrade Astro** on a branch (`npx @astrojs/upgrade`; currently 4.16.19). Read the upgrade guide, go one major version at a time. Astro 5 reworks `hybrid`, so test the calculator and its auth endpoint carefully; click through every page and the calculator login before merging
+10. **Upgrade Astro** on a branch (`npx @astrojs/upgrade`; currently 4.16.19). Read the upgrade guide, go one major version at a time. Astro 5 reworks `hybrid`, so test the calculator and its auth endpoint carefully; click through every page, the calculator login and **`/sign/` on the iPad** before merging
 11. Reprint flyers with the new domain; keep the old Gmail mailbox active while old flyers circulate
 12. Optionally record the trading name on NZBN/directories
 13. Revisit the parked supplier-name mentions on About
 14. Revisit analytics if the site's role grows
 15. Each semester: update `src/data/hours.ts` and GBP hours, then re-run the Rich Results Test (the sign page follows `hours.ts` automatically)
 
-**Sign display**
-16. Move `sign.astro` into `src/pages/`, run `npm run build`, check `/sign/` on the iPad, then delete `public/sign.html`
+**Sign display** (design finished; only housekeeping left)
+16. Update the header comment in `sign.astro` ("no Tailwind" → "no Tailwind classes; preflight still applies")
 17. Add the optional `exceptions` export to `hours.ts` when the first one-off closure comes up (and set GBP special hours for the same days)
-18. "Closed today" wording for all-day closures, plus an optional `note` field in `exceptions`
-19. Confirm the Adobe font family names against `tailwind.config.mjs` and check the fonts render on the iPad
-20. Check the iPad's model, iOS version and battery condition; set Auto-Lock to Never, turn on Guided Access, and confirm Date & Time is automatic (NZ)
+18. Optional `note` field in `exceptions` (e.g. "Public holiday")
+19. Confirm the iPad kiosk settings are all in place: Auto-Lock Never, Guided Access on, Date & Time automatic (NZ), charger on
+20. Check the iPad battery's condition (swelling, heat) and ventilation if it is ever enclosed
