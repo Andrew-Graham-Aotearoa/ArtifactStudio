@@ -16,7 +16,7 @@ The website is deliberately **dual-purpose**: a real business asset and a live p
 
 ---
 
-# Current State (October 2026)
+# Current State (November 2026)
 
 Live at `https://artifactstudio.nz` on Cloudflare Pages.
 
@@ -34,6 +34,7 @@ GitHub is the source of truth. Never make changes manually in Cloudflare.
 | 404 (`src/pages/404.astro`) | Live |
 | Style Guide (`/style-guide`, `/style-guide2`) | Deployed, unlinked, `noindex` |
 | Calculator (`/calculator`) | Password-gated, unlinked from nav and footer |
+| Sign (`/sign/`) | Standalone open-hours display for the shop iPad; unlinked, `noindex`, not in the sitemap. See Sign Display |
 
 Mobile PageSpeed (Oct 2026): Performance 92, Accessibility 95, Best Practices 100, SEO 100.
 
@@ -72,7 +73,7 @@ If a decision conflicts with these, revisit it consciously.
 | Email | Zoho (DNS on Cloudflare), routed to existing Gmail | Keeps contact history |
 | Fonts | Adobe Fonts (kit `sak1ctd`, served from `use.typekit.net`) | Source Serif Pro + Akzidenz Grotesk Next Pro |
 
-**Rendering:** static by default. Server-rendered: the Calculator and its auth endpoint. Keep the public site extremely fast.
+**Rendering:** static by default. Server-rendered: the Calculator and its auth endpoint. Keep the public site extremely fast. The sign page is prerendered static HTML, but deliberately bypasses the layout, Tailwind and bundled JS (see Sign Display).
 
 ## Design and typography
 
@@ -86,6 +87,8 @@ If a decision conflicts with these, revisit it consciously.
 
 `layouts/` shared shell; `components/` reusable UI; `pages/` routing; `data/` plain data modules; `assets/` processed images; `public/` static files; `styles/` global only. Components are reusable interface elements; pages compose them.
 
+The one exception is `pages/sign.astro`, which is a self-contained page with no layout and no shared styles (see Sign Display).
+
 ---
 
 # Page Content Decisions
@@ -98,15 +101,80 @@ If a decision conflicts with these, revisit it consciously.
 
 **Calculator:** business infrastructure, not marketing. Gated by `CALCULATOR_PASSWORD`, session cookie `frame_auth=ok` (8 h). The React island renders only after the server-side auth check. Not linked anywhere public.
 
+**Sign:** business infrastructure, not marketing. A display page for an always-on old iPad in the shop, so the hours (including one-off closures) are visible at a glance. Not linked anywhere public. Hours are edited in one place, `src/data/hours.ts`. See Sign Display.
+
 ---
 
 # Opening Hours and Structured Data
 
 - Hours change with the university semester. Edit **`src/data/hours.ts`** (24-hour `HH:MM`; a day with no `opens`/`closes` shows as Closed; a day with a break gets two entries). The Contact page list and the schema's `openingHoursSpecification` both read it, so the visible hours and the JSON-LD cannot disagree
+- The sign page (`src/pages/sign.astro`) also reads `hours.ts`, so one edit updates the Contact page, the schema and the sign together. Note: the sign's date-by-date `exceptions` (see Sign Display) are used by the sign only; the schema holds the regular pattern only
 - Update Google Business Profile hours at the same time (Google compares them with the schema). Use GBP **special hours** for one-off closures; the schema holds the regular pattern only
 - `src/components/LocalBusinessSchema.astro` emits LocalBusiness JSON-LD on the **homepage only**. It is one long line in the HTML, so search View Source for `ld+json`
 - `alternateName` keeps the old trading name on purpose. `areaServed` is a hand-written list; keep it to places actually served. `priceRange` is deliberately omitted (quotes are per job)
 - After a hours change, re-run the Rich Results Test (search.google.com/test/rich-results) to confirm the JSON is still valid
+
+---
+
+# Sign Display (`/sign/`)
+
+A standalone page for an always-on old iPad in the shop, showing the opening hours. The aim is that hours are edited in **one place** (`src/data/hours.ts`, plus Google Business Profile) and the sign follows. The sign is a convenience display, so it must never show "open" when the shop is closed.
+
+## Device and constraints
+
+- Old iPad on iOS 9/10-era Safari. The exact model and iOS version are unconfirmed; check Settings → General → About. It loads `artifactstudio.nz` over HTTPS (padlock shows) and the Adobe Fonts load, but the normal site renders badly: flex `gap` is unsupported (the nav items run together) and it gets the stacked mobile layout.
+- Kiosk setup on the iPad: open `/sign/`, Share → Add to Home Screen (full screen, no Safari bars; viewport height is noticeably better this way), Auto-Lock → Never, Guided Access on, Date & Time set automatically (NZ).
+- The sign trusts the iPad's clock for the dates, the "today" row and the open/closed status, so a wrong clock means a wrong sign.
+- It is always on and always charging. The battery is about 14 years old: check it for swelling, keep it ventilated if it is ever enclosed, and note the backlight stays on overnight (iOS 9 has no schedule).
+
+## Implementation rules (do not break these)
+
+- `src/pages/sign.astro` has **no layout, no Tailwind and no bundled JS**. Everything is hand-written inside the page.
+- Use `<style is:inline>` and `<script is:inline>`. Astro bundles a plain `<script>` as a module, which old Safari will not run; `is:inline` leaves the code exactly as written (and stops style scoping).
+- JavaScript is **ES5 only**: `var`, `function`, no arrow functions, template literals, `fetch`, `async`, `Intl` or `padStart`. Avoid ES3 reserved words as names (`short`, `long`).
+- CSS is old-Safari-safe: a `<table>` for the grid, `vmin` sizes (so portrait and landscape both fit), and no flex `gap`, grid, custom properties, `clamp()`, `inset` or `aspect-ratio`.
+- Hours reach the browser as JSON in `<script id="sign-data" type="application/json" is:inline set:html={data}>` and are read with `JSON.parse(document.getElementById('sign-data').textContent)`.
+- `noindex`, not linked anywhere, not in `sitemap.xml`.
+- `<meta http-equiv="refresh" content="300">` reloads the page every 5 minutes. If a reload fails, Safari shows its own error page, which fails loudly instead of leaving a stale "open".
+- If the script cannot run, the table falls back to the weekly hours, built at build time from `hours.ts` with `formatTime`.
+
+## Layout and styling
+
+- Heading "Open Hours" in Source Serif Pro 400, `#2c3082`.
+- A rolling seven days starting today, in three columns: day (left, 44%), date (centred, 24%, e.g. "17 Nov") and hours (right-aligned, 32%, e.g. "10 – 4", matching the printed sign).
+- Today's row is inverted: `#2c3082` background, `#f1f8fd` text, weight 900.
+- Under the table: a status line ("Open now until 4pm", "Opens today at 10am", "Closed now") and a small "Updated 5:19pm" time, so a stale page is visible.
+- A date range under the heading was tried and removed as redundant, since each row shows its date.
+- Colours: background `#f1f8fd`, accent `#2c3082`, text stone-900 `#1c1917`, muted stone-600 `#57534e`, row rules stone-300 `#d6d3d1`, "Updated" time stone-500 `#78716c`. The stone values are Tailwind palette picks and are not named in the style guide tokens.
+- Type: Akzidenz Grotesk Next Pro at weights **500 and 900 only** (the weights in the Adobe kit; anything else is faux-bolded). The page links the kit directly (`https://use.typekit.net/sak1ctd.css`). The CSS family names used are `"source-serif-pro"` and `"akzidenz-grotesk-next-pro"`; confirm them against `tailwind.config.mjs`.
+
+## Data and behaviour
+
+- `hours.ts` exports `openingHours` (Monday first; `opens`/`closes` as 24-hour `HH:MM`; a day with neither is Closed) and `formatTime`.
+- Optional one-off closures: add an `exceptions` export to `hours.ts`, keyed by date:
+
+  ```ts
+  export const exceptions: Record<string, { opens?: string; closes?: string }> = {
+    // '2026-12-25': {},                                  // closed
+    // '2026-12-24': { opens: '10:00', closes: '12:00' }, // short day
+  };
+  ```
+
+  `sign.astro` imports `hours.ts` as a namespace and falls back to `{}`, so the build works without the export. The Contact page and the JSON-LD ignore `exceptions`; set GBP **special hours** for the same days.
+- A closure renders like Tuesday: that date's row shows "Closed" and appears once the date is within the seven-day window; on the day the status line reads "Closed now". Short hours render as "10 – 12" with no special marker.
+- Changing hours needs a push and a Cloudflare build (about a minute or two), then the iPad picks the change up at its next 5-minute reload.
+
+## Status
+
+- `public/sign.html` was the first test version, with the hours copied in by hand. Tested on the iPad: it loads and looks fine.
+- `src/pages/sign.astro` is the real version, reading `hours.ts`. It is written but not yet built or tested in the repo: run `npm run build`, check `/sign/` on the iPad, then delete `public/sign.html`.
+
+## Ideas and next steps
+
+- "Closed today" wording for all-day closures (instead of "Closed now"), plus an optional `note` field in `exceptions` (for example "Public holiday" or "Back Wednesday") shown under the hours.
+- Confirm the Adobe font family names and weights render correctly on the iPad.
+- Check landscape fits without scrolling.
+- Check the iPad's battery before leaving it on charge long term.
 
 ---
 
@@ -123,7 +191,7 @@ Keep the old domain **registered indefinitely** (redirects run at Cloudflare's e
 ## Current setup
 
 - `robots.txt` in `public/` includes a `Sitemap:` line. Cloudflare's managed robots.txt is **not** modifying it, so the live file matches the source
-- Hand-written `public/sitemap.xml` listing the four public URLs in trailing-slash form. Submitted in Search Console (Domain property, so the **full URL** `https://artifactstudio.nz/sitemap.xml` is required). Revisit an integration only if the page count grows
+- Hand-written `public/sitemap.xml` listing the four public URLs in trailing-slash form. Submitted in Search Console (Domain property, so the **full URL** `https://artifactstudio.nz/sitemap.xml` is required). Revisit an integration only if the page count grows. The unlinked pages (Style Guide, Calculator, Sign) are deliberately not listed
 - `Layout.astro` props: `title`, `description`, `image?`, `noindex?`. Emits meta description, canonical, Open Graph tags (`og:image` only if a page passes `image`) and optional `noindex`
 - Canonicals **keep the trailing slash** (`/about/`, homepage `/`), matching how Cloudflare Pages serves pages
 - Favicons: `favicon.svg` (theme-aware), `favicon.ico` (`sizes="any"`), `apple-touch-icon.png`, `favicon-192.png`
@@ -187,6 +255,8 @@ edit → test locally (npm run dev) → git add → commit → push → Cloudfla
 - **Search Console sitemap:** a Domain property rejects a relative path ("not a valid path"); use the absolute URL. "Couldn't fetch" is common right after submission even when the file is fine; wait a day and don't delete and resubmit. URL Inspection saying "URL is not on Google" for a sitemap file is normal
 - **Search Console snapshot vs live test:** the stored crawl can list many resources as "Other error" when pages are heavy; judge with Test Live URL
 - **Favicon caching:** browsers and Google cache favicons heavily; test in a private window
+- **Astro scripts on old Safari:** a plain `<script>` in an `.astro` file is bundled as a module, which old iOS Safari will not run. Anything the sign page needs must be `<script is:inline>` and written in ES5
+- **Tailwind on old Safari:** Tailwind's output uses features old iOS Safari lacks (flex `gap`, `inset`, newer colour syntax). This is why the main site's nav runs together on the old iPad and why `/sign/` is hand-written CSS
 - The old WordPress site (still on Vetta hosting) keeps calling the new site (`WordPress/x.x; https://artifactphotoandframe.co.nz` user agent)
 
 ---
@@ -213,7 +283,15 @@ Xero, supplier import pipeline, quotation workflow, CRM. Xero pattern decided: a
 
 # Session Log
 
-## October 2026 — crawlability, performance, sitemap, structured data
+## November 2026: sign display
+
+- Built an open-hours display page for an old iPad whose Safari cannot render the normal Astro/Tailwind pages: first as `public/sign.html`, then as `src/pages/sign.astro` reading `src/data/hours.ts`
+- Styled from the brand tokens and fonts (Source Serif Pro heading, Akzidenz Grotesk Next Pro 500/900, navy today row); three columns (day, centred date, right-aligned hours) over a rolling seven days, with an open/closed status line and an "Updated" time
+- Tested `public/sign.html` on the iPad: loads over HTTPS and looks fine; works best from the Home Screen
+- Decided hours are updated only in `hours.ts` and Google Business Profile; designed an optional date-keyed `exceptions` export for one-off closures (sign only)
+- Documented the old-Safari rules in Sign Display and Gotchas
+
+## October 2026: crawlability, performance, sitemap, structured data
 
 - Confirmed Googlebot can crawl and render the site; requested indexing for all four pages
 - Cut mobile PageSpeed from 64 to 92 (carousel and hero converted to WebP, resized, lazy-loaded, dimensions set, Typekit preconnect). Stopped tuning at 92
@@ -222,7 +300,7 @@ Xero, supplier import pipeline, quotation workflow, CRM. Xero pattern decided: a
 - Added LocalBusiness JSON-LD, driven by `src/data/hours.ts` (shared with the Contact page)
 - GBP name accepted; business added to Apple Maps
 
-## October 2026 — analytics and Google presence (earlier)
+## October 2026: analytics and Google presence (earlier)
 
 - Reviewed Cloudflare analytics; decided against Plausible/self-hosting for now
 - Added theme-aware favicons, `robots.txt`, meta/canonical/Open Graph tags, `noindex` on style guides, and a 404 page
@@ -252,4 +330,11 @@ Xero, supplier import pipeline, quotation workflow, CRM. Xero pattern decided: a
 12. Optionally record the trading name on NZBN/directories
 13. Revisit the parked supplier-name mentions on About
 14. Revisit analytics if the site's role grows
-15. Each semester: update `src/data/hours.ts` and GBP hours, then re-run the Rich Results Test
+15. Each semester: update `src/data/hours.ts` and GBP hours, then re-run the Rich Results Test (the sign page follows `hours.ts` automatically)
+
+**Sign display**
+16. Move `sign.astro` into `src/pages/`, run `npm run build`, check `/sign/` on the iPad, then delete `public/sign.html`
+17. Add the optional `exceptions` export to `hours.ts` when the first one-off closure comes up (and set GBP special hours for the same days)
+18. "Closed today" wording for all-day closures, plus an optional `note` field in `exceptions`
+19. Confirm the Adobe font family names against `tailwind.config.mjs` and check the fonts render on the iPad
+20. Check the iPad's model, iOS version and battery condition; set Auto-Lock to Never, turn on Guided Access, and confirm Date & Time is automatic (NZ)

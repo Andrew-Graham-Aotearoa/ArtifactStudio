@@ -62,7 +62,7 @@ const data = JSON.stringify({ weekly, exceptions });
     tr.today td { background: #2c3082; color: #f1f8fd; font-weight: 900; border-top-color: #2c3082; }
     tr.today td.date { color: #f1f8fd; font-weight: 500; }
     .status { margin: 5vmin 0 0; font-size: 5.4vmin; font-weight: 900; color: #2c3082; text-align: center; font-variant: small-caps; }
-    .stamp { margin: 2vmin 0 0; font-size: 3.4vmin; color: #78716c; }
+    .stamp { margin: 2vmin 0 0; font-size: 3.2vmin; color: #78716c; text-align: right; }
     /* @media (orientation: landscape) {
       h1 { font-size: 9vmin; margin-bottom: 3vmin; }
       td { font-size: 4.8vmin; padding: 1.1vmin 0; }
@@ -73,7 +73,7 @@ const data = JSON.stringify({ weekly, exceptions });
 </head>
 <body>
   <div class="wrap">
-    <h1 class="text-6xl font-header font-black leading-relaxed">Open Hours</h1>
+    <h1>Open Hours</h1>
     <table>
       <tbody id="rows">
         {/* Shown only if the script cannot run. Built from hours.ts at build time. */}
@@ -132,10 +132,10 @@ const data = JSON.stringify({ weekly, exceptions });
     var t = now.getHours() + now.getMinutes() / 60;
     var today = hoursFor(now);
     var status;
-    if (today && t >= decimal(today.opens) && t < decimal(today.closes)) { status = 'Open now until ' + hmAmPm(today.closes); }
+     if (today && t >= decimal(today.opens) && t < decimal(today.closes)) { status = 'open now until ' + hmAmPm(today.closes); }
     else if (today && t < decimal(today.opens)) { status = 'opens today at ' + hmAmPm(today.opens); }
+    else if (!today) { status = 'closed today'; }
     else { status = 'closed now'; }
-    document.getElementById('status').innerHTML = status;
 
     var hr = now.getHours();
     document.getElementById('stamp').innerHTML =
