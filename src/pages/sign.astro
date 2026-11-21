@@ -28,7 +28,6 @@ const data = JSON.stringify({ weekly, exceptions });
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="default">
   <meta name="robots" content="noindex">
-  <meta http-equiv="refresh" content="300">
   <link rel="preconnect" href="https://use.typekit.net">
   <link rel="stylesheet" href="https://use.typekit.net/sak1ctd.css">
   <style is:inline>
@@ -111,31 +110,53 @@ const data = JSON.stringify({ weekly, exceptions });
     }
     function span(x) { return x ? hm(x.opens) + ' \u2013 ' + hm(x.closes) : 'Closed'; }
 
-    var now = new Date();
-    var rows = '', i, d, x;
+        var RAW = document.getElementById('sign-data').textContent;
+    var lastSync = new Date();
 
-    for (i = 0; i < 7; i++) {
-      d = new Date(now.getFullYear(), now.getMonth(), now.getDate() + i);
-      x = hoursFor(d);
-      rows += '<tr' + (i === 0 ? ' class="today"' : '') + '>' +
-              '<td class="day">' + DAYS[d.getDay()] + '</td>' +
-              '<td class="date">' + d.getDate() + ' ' + MONTHS[d.getMonth()] + '</td>' +
-              '<td class="hrs">' + span(x) + '</td></tr>';
+    function render() {
+      var now = new Date();
+      var rows = '', i, d, x;
+
+      for (i = 0; i < 7; i++) {
+        d = new Date(now.getFullYear(), now.getMonth(), now.getDate() + i);
+        x = hoursFor(d);
+        rows += '<tr' + (i === 0 ? ' class="today"' : '') + '>' +
+                '<td class="day">' + DAYS[d.getDay()] + '</td>' +
+                '<td class="date">' + d.getDate() + ' ' + MONTHS[d.getMonth()] + '</td>' +
+                '<td class="hrs">' + span(x) + '</td></tr>';
+      }
+      document.getElementById('rows').innerHTML = rows;
+
+      var t = now.getHours() + now.getMinutes() / 60;
+      var today = hoursFor(now);
+      var status;
+      if (today && t >= decimal(today.opens) && t < decimal(today.closes)) { status = 'open now until ' + hmAmPm(today.closes); }
+      else if (today && t < decimal(today.opens)) { status = 'opens today at ' + hmAmPm(today.opens); }
+      else if (!today) { status = 'closed today'; }
+      else { status = 'closed now'; }
+      document.getElementById('status').innerHTML = status;
+
+      var hr = lastSync.getHours();
+      document.getElementById('stamp').innerHTML =
+        'updated ' + h12(hr) + ':' + pad(lastSync.getMinutes()) + (hr < 12 ? 'am' : 'pm');
     }
-    document.getElementById('rows').innerHTML = rows;
 
-    var t = now.getHours() + now.getMinutes() / 60;
-    var today = hoursFor(now);
-    var status;
-     if (today && t >= decimal(today.opens) && t < decimal(today.closes)) { status = 'open now until ' + hmAmPm(today.closes); }
-    else if (today && t < decimal(today.opens)) { status = 'opens today at ' + hmAmPm(today.opens); }
-    else if (!today) { status = 'closed today'; }
-    else { status = 'closed now'; }
-    document.getElementById('status').innerHTML = status;
+    function sync() {
+      var xhr = new XMLHttpRequest();
+      xhr.open('GET', '/sign/?t=' + new Date().getTime(), true);
+      xhr.timeout = 20000;
+      xhr.onreadystatechange = function () {
+        if (xhr.readyState !== 4 || xhr.status !== 200) { return; }
+        if (xhr.responseText.indexOf(RAW) === -1) { location.reload(); return; }
+        lastSync = new Date();
+        render();
+      };
+      try { xhr.send(); } catch (e) {}
+    }
 
-    var hr = now.getHours();
-    document.getElementById('stamp').innerHTML =
-      'updated ' + h12(hr) + ':' + pad(now.getMinutes()) + (hr < 12 ? ' am' : ' pm');
+    render();
+    setInterval(render, 60000);
+    setInterval(sync, 300000);
   })();
   </script>
 </body>
